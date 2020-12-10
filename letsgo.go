@@ -2,11 +2,12 @@ package letsgo
 
 import (
 	"database/sql"
-	config "letsgo/config"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/time2k/letsgo/config"
 
 	"github.com/afex/hystrix-go/hystrix"
 	_ "github.com/go-sql-driver/mysql" //mysql

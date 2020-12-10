@@ -2,7 +2,7 @@ package letsgo
 
 import (
 	"fmt"
-	"letsgo/config"
+	"github.com/time2k/letsgo/config"
 	"time"
 
 	"github.com/gomodule/redigo/redis" //redigo

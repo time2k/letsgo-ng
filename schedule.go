@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"letsgo/config"
+	"github.com/time2k/letsgo/config"
 	"strconv"
 	"time"
 )

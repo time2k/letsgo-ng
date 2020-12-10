@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"letsgo/config"
+	"github.com/time2k/letsgo/config"
 	"log"
 	"math/rand"
 	"mime/multipart"

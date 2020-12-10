@@ -7,8 +7,9 @@ package letsgo
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"letsgo/config"
 	"net/url"
+
+	"github.com/time2k/letsgo/config"
 )
 
 //Module 框架组件Module模块结构体
