@@ -1,7 +1,7 @@
 // +build !debug
 // +build !release
 
-package Lconfig
+package config
 
 import (
 	"time"

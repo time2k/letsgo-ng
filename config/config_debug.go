@@ -1,6 +1,6 @@
 // +build debug
 
-package Lconfig
+package config
 
 import (
 	"time"

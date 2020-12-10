@@ -1,4 +1,4 @@
-package Libs
+package letsgo
 
 import (
 	"log"

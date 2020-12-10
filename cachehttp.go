@@ -1,15 +1,17 @@
-package Libs
+package letsgo
 
 import (
-	"Letsgo2/Lconfig"
+	"bytes"
 	"compress/gzip"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"letsgo/config"
 	"log"
 	"math/rand"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -27,8 +29,8 @@ import (
 //CacheHTTPer 为cachehttp的接口
 type CacheHTTPer interface {
 	GetCacheExpire() int32
-	GetHTTP() *HTTPmodel
-	GetDebugInfo() *DebugModel
+	GetHTTP() *HTTPClient
+	GetDebugInfo() *DebugInfo
 	InitHTTP()
 }
 
@@ -51,7 +53,7 @@ func (c *LCacheHTTP) Init(logfile string) {
 	c.CL = &http.Client{
 		Transport: &http.Transport{
 			Dial: func(netw, addr string) (net.Conn, error) {
-				c, err := net.DialTimeout(netw, addr, time.Duration(time.Second*Lconfig.CACHEHTTP_DIAL_TIMEOUT))
+				c, err := net.DialTimeout(netw, addr, time.Duration(time.Second*config.CACHEHTTP_DIAL_TIMEOUT))
 				if err != nil {
 					return nil, err
 				}
@@ -60,7 +62,7 @@ func (c *LCacheHTTP) Init(logfile string) {
 			},
 			//MaxIdleConnsPerHost:   10,
 			DisableKeepAlives:     true,
-			ResponseHeaderTimeout: time.Second * Lconfig.CACHEHTTP_RESPONSE_TIMEOUT,
+			ResponseHeaderTimeout: time.Second * config.CACHEHTTP_RESPONSE_TIMEOUT,
 		},
 	}
 	c.Logfile = logfile
@@ -102,7 +104,7 @@ func (c *LCacheHTTP) GenUniqID() string {
 	return cipherStr
 }
 
-func (c *LCacheHTTP) SampleHTTPClient(rq *HTTPRequest, debug *DebugModel, ret chan HTTPResponseResult) error {
+func (c *LCacheHTTP) SampleHTTPClient(rq HTTPRequest, debug *DebugInfo, ret chan HTTPResponseResult) error {
 	//如果http请求响应日志有定义
 	httpLog := new(log.Logger)
 	httpinfo := ""
@@ -122,14 +124,64 @@ func (c *LCacheHTTP) SampleHTTPClient(rq *HTTPRequest, debug *DebugModel, ret ch
 	httpRes.URL = rq.URL
 
 	if rq.Postdata != nil {
-		if _, ok := rq.Header["Content-Type"]; !ok {
+		if _, ok := rq.Header["Content-Type"]; !ok { //默认类型为application/x-www-form-urlencoded
 			data := make(url.Values)
 			for k, v := range rq.Postdata {
-				data.Add(k, v)
+				data.Add(k, v.(string))
 			}
 			pbody = strings.NewReader(data.Encode())
-		} else {
-			pbody = strings.NewReader(rq.Postdata["0"])
+		} else if rq.Header["Content-Type"] == "application/x-www-form-urlencoded" {
+			data := make(url.Values)
+			for k, v := range rq.Postdata {
+				data.Add(k, v.(string))
+			}
+			pbody = strings.NewReader(data.Encode())
+		} else if rq.Header["Content-Type"] == "multipart/form-data" {
+			var b bytes.Buffer
+			w := multipart.NewWriter(&b)
+			for k, v := range rq.Postdata {
+				if strings.Contains(k, "file:") { //如果key中包含file:，则认为是文件型
+					strsplit := strings.Split(k, ":")
+					filename := strsplit[1]
+					fw, err := w.CreateFormFile(filename, "file")
+					if err != nil {
+						debug.Add(fmt.Sprintf("CacheHTTP multipart create error: %s", err.Error()))
+						log.Println("[error]CacheHTTP multipart create error:", err.Error())
+						return err
+					}
+					file := v.(*multipart.FileHeader)
+					fs, err := file.Open()
+					defer fs.Close()
+					if err != nil {
+						debug.Add(fmt.Sprintf("CacheHTTP multipart open error: %s", err.Error()))
+						log.Println("[error]CacheHTTP multipart open error:", err.Error())
+						return err
+					}
+					if _, err := io.Copy(fw, fs); err != nil {
+						debug.Add(fmt.Sprintf("CacheHTTP multipart io.Copy error: %s", err.Error()))
+						log.Println("[error]CacheHTTP multipart io.Copy error:", err.Error())
+						return err
+					}
+				} else {
+					fw, err := w.CreateFormField(k)
+					if err != nil {
+						debug.Add(fmt.Sprintf("CacheHTTP multipart create error: %s", err.Error()))
+						log.Println("[error]CacheHTTP multipart create error:", err.Error())
+						return err
+					}
+					if _, err = fw.Write([]byte(v.(string))); err != nil {
+						debug.Add(fmt.Sprintf("CacheHTTP multipart write error: %s", err.Error()))
+						log.Println("[error]CacheHTTP multipart write error:", err.Error())
+						return err
+					}
+				}
+			}
+			w.Close()
+			pbody = &b
+			//set header
+			rq.Header["Content-Type"] = w.FormDataContentType()
+		} else { //json body, binary body etc
+			pbody = strings.NewReader(rq.Postdata["0"].(string))
 		}
 	}
 
@@ -141,6 +193,7 @@ func (c *LCacheHTTP) SampleHTTPClient(rq *HTTPRequest, debug *DebugModel, ret ch
 	req.Header.Add("User-Agent", "Mozilla/5.0")
 	req.Header.Add("Accept-Encoding", "deflate")
 
+	//增加默认类型头 application/x-www-form-urlencoded
 	if (rq.Method == "POST" || rq.Method == "post") && rq.Postdata != nil {
 		if _, ok := rq.Header["Content-Type"]; !ok {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -171,7 +224,7 @@ func (c *LCacheHTTP) SampleHTTPClient(rq *HTTPRequest, debug *DebugModel, ret ch
 
 	//降级标签采用host/path形式进行定义，比如说：geo.mob.app.letv.com/geo
 	//hystrix_tag := request.Host + request.Path
-	hystrix_tag := Lconfig.HYSTRIX_DEFAULT_TAG
+	hystrix_tag := config.HYSTRIX_DEFAULT_TAG
 	// params, _ := url.ParseQuery(request.RawQuery)
 
 	hystrix.Do(hystrix_tag, func() error {
@@ -254,7 +307,7 @@ func (c *LCacheHTTP) SampleHTTPClient(rq *HTTPRequest, debug *DebugModel, ret ch
 			RetryCount int
 		}
 
-		_, err_cache := c.Cache.LPUSH("http_retry_pool", RedisHTTPRetryPool{Request: *rq})
+		_, err_cache := c.Cache.LPUSH("http_retry_pool", RedisHTTPRetryPool{Request: rq})
 		if err_cache != nil {
 			println(err_cache.Error())
 		}
@@ -337,8 +390,8 @@ func (c *LCacheHTTP) Do(cher CacheHTTPer) (map[string]interface{}, error) {
 			} else {
 				return nil, fmt.Errorf("[error]CacheHTTP channel closed before reading: %s", X_UNIQ_ID)
 			}
-		case <-time.After(Lconfig.CACHEHTTP_SELECT_TIMEOUT):
-			return nil, fmt.Errorf("[error]CacheHTTP channel timeout after %d second: %s", Lconfig.CACHEHTTP_SELECT_TIMEOUT, X_UNIQ_ID)
+		case <-time.After(config.CACHEHTTP_SELECT_TIMEOUT):
+			return nil, fmt.Errorf("[error]CacheHTTP channel timeout after %d second: %s", config.CACHEHTTP_SELECT_TIMEOUT, X_UNIQ_ID)
 		}
 		NeedHTTPSum--
 		c.SubCounter()
@@ -350,7 +403,7 @@ func (c *LCacheHTTP) Do(cher CacheHTTPer) (map[string]interface{}, error) {
 			//downgrade get shorter TTL 60 second
 			each_cache_expire := cache_expire
 			if each_cache_data.HTTPError == true {
-				each_cache_expire = Lconfig.CACHEHTTP_DOWNGRADE_CACHE_EXPIRE
+				each_cache_expire = config.CACHEHTTP_DOWNGRADE_CACHE_EXPIRE
 			}
 
 			err := c.Cache.Set(each_cache_data.CacheKey, &each_cache_data.Cachedata, each_cache_expire)

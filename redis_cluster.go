@@ -1,8 +1,8 @@
-package Libs
+package letsgo
 
 import (
-	"Letsgo2/Lconfig"
 	"fmt"
+	"letsgo/config"
 	"time"
 
 	"github.com/gomodule/redigo/redis" //redigo
@@ -59,11 +59,11 @@ func (c *Lredisc) DoOnce(commandName string, args ...interface{}) (reply interfa
 
 func createPool(addr string, opts ...redis.DialOption) (*redis.Pool, error) {
 	return &redis.Pool{
-		MaxIdle:         Lconfig.REDIS_POOL_MAXIDLE,
-		MaxActive:       Lconfig.REDIS_POOL_MAXACTIVE,
-		IdleTimeout:     Lconfig.REDIS_POOL_IDLETIMEOUT,
-		MaxConnLifetime: Lconfig.REDIS_POOL_MAXCONNLIFETIME,
-		Wait:            Lconfig.REDIS_POLL_ALLOW_WAIT,
+		MaxIdle:         config.REDIS_POOL_MAXIDLE,
+		MaxActive:       config.REDIS_POOL_MAXACTIVE,
+		IdleTimeout:     config.REDIS_POOL_IDLETIMEOUT,
+		MaxConnLifetime: config.REDIS_POOL_MAXCONNLIFETIME,
+		Wait:            config.REDIS_POLL_ALLOW_WAIT,
 		Dial: func() (redis.Conn, error) {
 			return redis.Dial("tcp", addr, opts...)
 		},
