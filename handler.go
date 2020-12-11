@@ -11,22 +11,21 @@ import (
 //HandlerFunc 定义lestgo handler func
 type HandlerFunc func(ltg CommonParams) error
 
-//LoadHandler letsgo框架加载handler
-func LoadHandler(myfunc HandlerFunc) echo.HandlerFunc {
+//Handler letsgo框架加载handler
+func Handler(myfunc HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer PanicFunc()
 
 		//params check
 		//通用参数处理，通用参数包括letsgo框架指针通过此结构体传递到model
-		return myfunc(GenCommparams(c, MyLetsGo))
+		return myfunc(GenCommparams(c))
 	}
 }
 
 //GenCommparams 通用参数处理
-func GenCommparams(c echo.Context, letsgo *Letsgo) CommonParams {
+func GenCommparams(c echo.Context) CommonParams {
 	commp := CommonParams{}
 	commp.Init()
-	commp.Letsgo = letsgo
 
 	if c != nil {
 		commp.HTTPContext = c

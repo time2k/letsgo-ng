@@ -17,7 +17,7 @@ import (
 
 //CommonParams Letsgo handler,model 通用参数
 type CommonParams struct {
-	Letsgo      *Letsgo
+	//Letsgo      *Letsgo
 	HTTPContext echo.Context
 	Params      map[string]string
 }
@@ -67,7 +67,7 @@ type Letsgo struct {
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
 func NewLetsgo() {
-	MyLetsGo = &Letsgo{}
+	Default = &Letsgo{}
 }
 
 //Init 初始化框架
@@ -221,5 +221,5 @@ func (L *Letsgo) Close() {
 	L.Cache.Redisc.Redisc.Close()
 }
 
-//MyLetsGo 框架自持变量
-var MyLetsGo *Letsgo
+//Default 框架自持变量
+var Default *Letsgo
