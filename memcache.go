@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	//"Letsgo2/Ltypedef"
 )
 
 //Lmemcache 结构体
