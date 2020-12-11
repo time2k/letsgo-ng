@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"github.com/time2k/letsgo/config"
 	"log"
 	"math/rand"
 	"mime/multipart"
@@ -21,6 +20,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/time2k/letsgo/config"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/bitly/go-simplejson"
