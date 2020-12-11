@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/time2k/letsgo/config"
@@ -61,8 +60,8 @@ type Letsgo struct {
 	Schedule   *LSchedule
 	Logger     *log.Logger
 	LoggerFile *os.File
-	ModulePool sync.Pool
-	CacheLock  *LCacheLock
+	//ModulePool sync.Pool
+	CacheLock *LCacheLock
 }
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
@@ -73,9 +72,9 @@ func NewLetsgo() {
 //Init 初始化框架
 func (L *Letsgo) Init() {
 	//init ModulePool
-	L.ModulePool = sync.Pool{
+	/*L.ModulePool = sync.Pool{
 		New: func() interface{} { return new(Module) },
-	}
+	}*/
 
 	//hystrix setting
 	hystrix.ConfigureCommand(config.HYSTRIX_DEFAULT_TAG, config.HYSTRIX_DEFAULT_CONFIG)
