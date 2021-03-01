@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/time2k/letsgo/config"
+	"github.com/time2k/letsgo-ng/config"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/bitly/go-simplejson"

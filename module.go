@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"net/url"
 
-	"github.com/time2k/letsgo/config"
+	"github.com/time2k/letsgo-ng/config"
 )
 
 //Module 框架组件Module模块结构体
