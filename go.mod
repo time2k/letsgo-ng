@@ -1,4 +1,4 @@
-module github.com/time2k/letsgo
+module github.com/time2k/letsgo-ng
 
 go 1.12
 
