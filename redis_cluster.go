@@ -2,8 +2,9 @@ package letsgo
 
 import (
 	"fmt"
-	"github.com/time2k/letsgo/config"
 	"time"
+
+	"github.com/time2k/letsgo-ng/config"
 
 	"github.com/gomodule/redigo/redis" //redigo
 	"github.com/mna/redisc"            //redis cluster base on redigo

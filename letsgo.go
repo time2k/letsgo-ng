@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/time2k/letsgo/config"
+	"github.com/time2k/letsgo-ng/config"
 
 	"github.com/afex/hystrix-go/hystrix"
 	_ "github.com/go-sql-driver/mysql" //mysql
