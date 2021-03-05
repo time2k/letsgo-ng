@@ -29,7 +29,7 @@ type ModelFunc func(commp CommonParams, args ...interface{}) BaseReturnData
 func Model(commp CommonParams, myfunc ModelFunc, args ...interface{}) BaseReturnData {
 	defer PanicFunc()
 
-	ret := myfunc(commp, args)
+	ret := myfunc(commp, args...)
 
 	return ret
 }

@@ -217,6 +217,7 @@ type FuncDesc struct {
 type Schedule struct {
 	FuncDescs []FuncDesc
 	DataCH    chan ScheduleChan
+	DebugInfo
 }
 
 //GetSchedule 得到调度器信息
@@ -227,6 +228,11 @@ func (schedulem Schedule) GetSchedule() *Schedule {
 //SetSchedule 设置调度器信息
 func (schedulem Schedule) SetSchedule(commp CommonParams, funcx ModelFunc, args ...interface{}) {
 	schedulem.FuncDescs = append(schedulem.FuncDescs, FuncDesc{ModelFunc: funcx, CommP: commp, Args: args})
+}
+
+//GetDebugInfo 得到debug信息
+func (schedulem Schedule) GetDebugInfo() *DebugInfo {
+	return &schedulem.DebugInfo
 }
 
 //ScheduleChan 结构体
