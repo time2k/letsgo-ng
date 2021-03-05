@@ -124,6 +124,10 @@ func (L *Letsgo) InitDatabase(cfg config.DBconfigStruct) {
 		//finally assign
 		L.DBC[k] = DBset
 	}
+
+	L.CacheQuery.SetDBset(L.DBC)
+	L.CacheQuery.SetCache(L.Cache)
+
 }
 
 //InitMemcached 初始化memcached
