@@ -84,6 +84,7 @@ func (L *Letsgo) Init() {
 func (L *Letsgo) InitDatabase(cfg config.DBconfigStruct) {
 	//db init
 	L.DBC = make(map[string]DBSet)
+	L.CacheQuery = NewCacheQuery()
 
 	for k, v := range cfg {
 		var err error
