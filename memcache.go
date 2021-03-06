@@ -14,8 +14,8 @@ type Lmemcache struct {
 	mc *memcache.Client
 }
 
-//NewLmemcache 返回一个Lmemcache结构体指针
-func NewLmemcache() *Lmemcache {
+//newLmemcache 返回一个Lmemcache结构体指针
+func newLmemcache() *Lmemcache {
 	return &Lmemcache{}
 }
 

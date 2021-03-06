@@ -13,36 +13,38 @@ type RPCconfig struct {
 	Address string //具体地址及端口
 }
 
-//LJsonrpcClient 结构体
-type LJsonrpcClient struct {
+//JSONRPCClient 结构体
+type JSONRPCClient struct {
 	Service map[string]RPCconfig
 	Lock    sync.Mutex
 }
 
-//NewLJsonrpcClient 返回一个LJsonrpcClient结构体指针
-func NewLJsonrpcClient() *LJsonrpcClient {
-	return &LJsonrpcClient{}
+//NewJSONRPCClient 返回一个JSONRPCClient结构体指针
+func NewJSONRPCClient() *JSONRPCClient {
+	return &JSONRPCClient{}
 }
 
-//Init LJsonrpcClient初始化
-func (c *LJsonrpcClient) Init() {
+//Init JSONRPCClient初始化
+func (c *JSONRPCClient) Init() {
 	c.Service = make(map[string]RPCconfig)
 }
 
-func (rpc *LJsonrpcClient) Set(service, network, address string) error {
-	rpc.Lock.Lock()
-	rpc.Service[service] = RPCconfig{Network: network, Address: address}
-	rpc.Lock.Unlock()
+//Set 设置config
+func (c *JSONRPCClient) Set(service, network, address string) error {
+	c.Lock.Lock()
+	c.Service[service] = RPCconfig{Network: network, Address: address}
+	c.Lock.Unlock()
 	return nil
 }
 
 //Dial 连接到一个rpc服务器
-func (rpc *LJsonrpcClient) Dial(service string) (*rpc.Client, error) {
-	this_service, ok := rpc.Service[service]
+func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
+	thisservice, ok := c.Service[service]
 	if ok != true {
 		return nil, fmt.Errorf("[error]jsonrpc Call unknown service: %s", service)
 	}
-	client, err := jsonrpc.Dial(this_service.Network, this_service.Address)
+
+	client, err := jsonrpc.Dial(thisservice.Network, thisservice.Address)
 	if err != nil {
 		return nil, fmt.Errorf("[error]jsonrpc dial: %s", err.Error())
 	}

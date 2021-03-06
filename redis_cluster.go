@@ -15,8 +15,8 @@ type Lredisc struct {
 	Redisc *redisc.Cluster
 }
 
-//NewLredisc 返回一个Lredis结构体指针
-func NewLredisc() *Lredisc {
+//newLredisc 返回一个Lredis结构体指针
+func newLredisc() *Lredisc {
 	return &Lredisc{}
 }
 
