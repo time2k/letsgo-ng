@@ -2,7 +2,6 @@ package letsgo
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gomodule/redigo/redis"
 	jsoniter "github.com/json-iterator/go"
@@ -102,7 +101,6 @@ func (c *Cache) Set(cachekey string, DataStruct interface{}, expire int32) error
 		if err2 != nil {
 			return fmt.Errorf("[error]Cache Redisc set cache: %s", err2.Error())
 		}
-		log.Println(cachekey)
 	}
 	return nil
 }
