@@ -12,61 +12,61 @@ import (
 	_ "github.com/go-sql-driver/mysql" //mysql
 )
 
-//CacheDBQueryer 接口描述
-type CacheDBQueryer interface {
+//DBQueryer 接口描述
+type DBQueryer interface {
 	IsUseCache() bool
 	GetCacheKey() string
 	GetCacheExpire() int32
-	GetDB() *Database
+	GetBuilder() *DBQueryBuilder
 	GetDebugInfo() *DebugInfo
 	GetDbname() string
 }
 
-//LCacheDBQuery 结构体
-type LCacheDBQuery struct {
+//DBQuery 结构体
+type DBQuery struct {
 	DBset          DBC
-	Cache          *LCache
+	Cache          *Cache
 	SQLcounter     int
 	SQLcounterLock sync.Mutex
 	RWflag         int
 	RWflagLock     sync.Mutex
 }
 
-//NewCacheQuery 返回一个LCacheQuery结构体指针
-func NewCacheQuery() *LCacheDBQuery {
-	return &LCacheDBQuery{}
+//newDBQuery 返回一个DBQuery结构体指针
+func newDBQuery() *DBQuery {
+	return &DBQuery{}
 }
 
 //SetDBset 设置db连接集
-func (c *LCacheDBQuery) SetDBset(dbset DBC) {
+func (c *DBQuery) SetDBset(dbset DBC) {
 	c.DBset = dbset
 }
 
 //SetCache 设置cache
-func (c *LCacheDBQuery) SetCache(cache *LCache) {
+func (c *DBQuery) SetCache(cache *Cache) {
 	c.Cache = cache
 }
 
 //AddCounter 内置计数器++
-func (c *LCacheDBQuery) AddCounter() {
+func (c *DBQuery) AddCounter() {
 	c.SQLcounterLock.Lock()
 	defer c.SQLcounterLock.Unlock()
 	c.SQLcounter++
 }
 
 //SubCounter 内置计数器--
-func (c *LCacheDBQuery) SubCounter() {
+func (c *DBQuery) SubCounter() {
 	c.SQLcounterLock.Lock()
 	defer c.SQLcounterLock.Unlock()
 	c.SQLcounter--
 }
 
 //SelectOne 单条查询方法
-func (c *LCacheDBQuery) SelectOne(cqer CacheDBQueryer) (bool, error) {
+func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	c.AddCounter()
 	defer c.SubCounter()
 
-	DB := cqer.GetDB()
+	DB := cqer.GetBuilder()
 	SQL := DB.SQL
 	SQLcondition := DB.SQLcondition
 	Result := DB.Result
@@ -77,8 +77,9 @@ func (c *LCacheDBQuery) SelectOne(cqer CacheDBQueryer) (bool, error) {
 	UseCache := cqer.IsUseCache()
 
 	debug.Add(c.Cache.Show())
-
+	fmt.Println(DB)
 	if UseCache == true { //do use cache
+		fmt.Println(Result)
 		if isget, err := c.Cache.Get(CacheKey, Result); isget != true { //cache miss or error
 			if err != nil {
 				return false, fmt.Errorf("[error]CacheQuery get cache: %s", err.Error())
@@ -135,11 +136,11 @@ func (c *LCacheDBQuery) SelectOne(cqer CacheDBQueryer) (bool, error) {
 }
 
 //SelectMulti 多条查询方法
-func (c *LCacheDBQuery) SelectMulti(cqer CacheDBQueryer) (bool, error) {
+func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	c.AddCounter()
 	defer c.SubCounter()
 
-	DB := cqer.GetDB()
+	DB := cqer.GetBuilder()
 	SQL := DB.SQL
 	SQLcondition := DB.SQLcondition
 	Result := DB.Result
@@ -217,11 +218,11 @@ func (c *LCacheDBQuery) SelectMulti(cqer CacheDBQueryer) (bool, error) {
 }
 
 //EXEC 数据执行类 insert update 等请用此函数
-func (c *LCacheDBQuery) EXEC(cqer CacheDBQueryer) (int64, error) {
+func (c *DBQuery) EXEC(cqer DBQueryer) (int64, error) {
 	c.AddCounter()
 	defer c.SubCounter()
 
-	DB := cqer.GetDB()
+	DB := cqer.GetBuilder()
 	SQL := DB.SQL
 	SQLcondition := DB.SQLcondition
 	debug := cqer.GetDebugInfo()
@@ -256,12 +257,12 @@ func (c *LCacheDBQuery) EXEC(cqer CacheDBQueryer) (int64, error) {
 }
 
 //GetTX 事务类，返回一个tx连接
-func (c *LCacheDBQuery) GetTX(cqer CacheDBQueryer) (*sql.Tx, error) {
+func (c *DBQuery) GetTX(cqer DBQueryer) (*sql.Tx, error) {
 	return c.DBset[cqer.GetDbname()].Master.Begin()
 }
 
 //ReadMSBalancer 轮询使用master或者slave进行查询
-func (c *LCacheDBQuery) ReadMSBalancer(DbName string) (*sql.DB, error) {
+func (c *DBQuery) ReadMSBalancer(DbName string) (*sql.DB, error) {
 	c.RWflagLock.Lock()
 	defer c.RWflagLock.Unlock()
 	if _, ok := c.DBset[DbName]; !ok { //key不存在

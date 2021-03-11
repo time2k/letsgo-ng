@@ -53,15 +53,14 @@ type DBC map[string]DBSet
 //Letsgo 框架依赖功能结构体
 type Letsgo struct {
 	DBC
-	Cache      *LCache
-	JSONRPC    *LJsonrpcClient
-	CacheQuery *LCacheDBQuery
-	CacheHTTP  *LCacheHTTP
-	Schedule   *LSchedule
-	Logger     *log.Logger
-	LoggerFile *os.File
-	//ModulePool sync.Pool
-	CacheLock *LCacheLock
+	Cache         *Cache
+	CacheLock     *CacheLock
+	DBQuery       *DBQuery
+	HTTPQuery     *HTTPQuery
+	JSONRPCClient *JSONRPCClient
+	Schedules     *Schedule
+	Logger        *log.Logger
+	LoggerFile    *os.File
 }
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
@@ -80,11 +79,11 @@ func (L *Letsgo) Init() {
 	hystrix.ConfigureCommand(config.HYSTRIX_DEFAULT_TAG, config.HYSTRIX_DEFAULT_CONFIG)
 }
 
-//InitDatabase 初始化数据库连接池
-func (L *Letsgo) InitDatabase(cfg config.DBconfigStruct) {
+//InitDBQuery 初始化DBQuery
+func (L *Letsgo) InitDBQuery(cfg config.DBconfigStruct) {
 	//db init
 	L.DBC = make(map[string]DBSet)
-	L.CacheQuery = NewCacheQuery()
+	L.DBQuery = newDBQuery()
 
 	for k, v := range cfg {
 		var err error
@@ -125,17 +124,17 @@ func (L *Letsgo) InitDatabase(cfg config.DBconfigStruct) {
 		L.DBC[k] = DBset
 	}
 
-	L.CacheQuery.SetDBset(L.DBC)
-	L.CacheQuery.SetCache(L.Cache)
+	L.DBQuery.SetDBset(L.DBC)
+	L.DBQuery.SetCache(L.Cache)
 
 }
 
 //InitMemcached 初始化memcached
 func (L *Letsgo) InitMemcached(MemcachedHost []string, MemcachedMaxIdleConns int, MemcachedMaxTimeout time.Duration) {
 	//init cache
-	L.Cache = NewLCache()
+	L.Cache = newCache()
 	//memcached
-	L.Cache.Memcached = NewLmemcache()
+	L.Cache.Memcached = newLmemcache()
 	L.Cache.Memcached.Conn(MemcachedHost...)
 	L.Cache.Memcached.MaxIdleConns(MemcachedMaxIdleConns)
 	L.Cache.Memcached.MaxTimeout(MemcachedMaxTimeout)
@@ -146,9 +145,9 @@ func (L *Letsgo) InitMemcached(MemcachedHost []string, MemcachedMaxIdleConns int
 //InitRedis 初始化redis
 func (L *Letsgo) InitRedis(RedisClusterServer []string, RedisDialOption []redis.DialOption) {
 	//init cache
-	L.Cache = NewLCache()
+	L.Cache = newCache()
 	//redis
-	L.Cache.Redisc = NewLredisc()
+	L.Cache.Redisc = newLredisc()
 	err := L.Cache.Redisc.Init(RedisClusterServer, RedisDialOption)
 	if err != nil {
 		log.Panicf("[error]RedisCluster: %s", err.Error())
@@ -157,15 +156,15 @@ func (L *Letsgo) InitRedis(RedisClusterServer []string, RedisDialOption []redis.
 	L.Cache.Init()
 }
 
-//InitHTTPClient 初始化http
-func (L *Letsgo) InitHTTPClient(HTTPLog string) {
-	//init CacheHTTP
-	L.CacheHTTP = NewCacheHTTP()
+//InitHTTPQuery 初始化http
+func (L *Letsgo) InitHTTPQuery(HTTPLog string) {
+	//init HTTPQuery
+	L.HTTPQuery = newHTTPQuery()
 	if L.Cache.UseRediscOrMemcached == 0 {
 		log.Panicf("[error]HTTP use cache but cache doesn't init")
 	}
-	L.CacheHTTP.SetCache(L.Cache)
-	L.CacheHTTP.Init(HTTPLog)
+	L.HTTPQuery.SetCache(L.Cache)
+	L.HTTPQuery.Init(HTTPLog)
 }
 
 //InitLog 初始化日志
@@ -180,17 +179,17 @@ func (L *Letsgo) InitLog(LogFileName string) {
 
 //InitSchedule 初始化并发器
 func (L *Letsgo) InitSchedule() {
-	L.Schedule = NewSchedule()
-	L.Schedule.Init()
+	L.Schedules = newSchedule()
+	L.Schedules.Init()
 }
 
 //InitJSONRPC 初始化JSON RPC
 func (L *Letsgo) InitJSONRPC(RPCConfig map[string]config.RPCconfig) {
 	//init jsonrpc
-	L.JSONRPC = NewLJsonrpcClient()
-	L.JSONRPC.Init()
+	L.JSONRPCClient = NewJSONRPCClient()
+	L.JSONRPCClient.Init()
 	for service, rpcconfig := range RPCConfig {
-		L.JSONRPC.Set(service, rpcconfig.Network, rpcconfig.Address)
+		L.JSONRPCClient.Set(service, rpcconfig.Network, rpcconfig.Address)
 	}
 }
 
@@ -203,7 +202,7 @@ func (L *Letsgo) InitMemConfig() {
 //InitCacheLock 初始化缓存锁
 func (L *Letsgo) InitCacheLock() {
 	//init CacheLock
-	L.CacheLock = NewCacheLock()
+	L.CacheLock = newCacheLock()
 	if L.Cache.UseRediscOrMemcached == 0 {
 		log.Panicf("[error]CacheLock use cache but cache doesn't init")
 	}

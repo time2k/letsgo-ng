@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-//LCacheLock 结构体
-type LCacheLock struct {
-	Cache *LCache
+//CacheLock 结构体
+type CacheLock struct {
+	Cache *Cache
 }
 
-//NewCacheLock 返回一个LCacheLock结构体指针
-func NewCacheLock() *LCacheLock {
-	return &LCacheLock{}
+//newCacheLock 返回一个CacheLock结构体指针
+func newCacheLock() *CacheLock {
+	return &CacheLock{}
 }
 
 //Lock 上锁
-func (c *LCacheLock) Lock(lockid int, prefix string, OWNER_ID string) {
+func (c *CacheLock) Lock(lockid int, prefix string, OWNER string) {
 	//必须使用redis
 	if c.Cache.UseRediscOrMemcached == 1 {
 		log.Println("CacheLock must use redis!")
@@ -28,7 +28,7 @@ func (c *LCacheLock) Lock(lockid int, prefix string, OWNER_ID string) {
 
 	var LOCK_TIMEOUT int32 = 10000 //msec
 	for {
-		lock, _ := c.Cache.SetNX(lockkey, OWNER_ID, LOCK_TIMEOUT)
+		lock, _ := c.Cache.SetNX(lockkey, OWNER, LOCK_TIMEOUT)
 		if lock == 1 {
 			//println("get lock by", OWNER_ID)
 			return
@@ -40,20 +40,20 @@ func (c *LCacheLock) Lock(lockid int, prefix string, OWNER_ID string) {
 }
 
 //Unlock 解锁
-func (c *LCacheLock) Unlock(lockid int, prefix string, OWNER_ID string) {
+func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
 	//必须使用redis
 	if c.Cache.UseRediscOrMemcached == 1 {
 		log.Println("CacheLock must use redis!")
 		return
 	}
 	lockkey := "LOCK_" + prefix + "_" + strconv.Itoa(lockid)
-	var lock_owner string
-	isget, _ := c.Cache.Get(lockkey, &lock_owner)
+	var lockowner string
+	isget, _ := c.Cache.Get(lockkey, &lockowner)
 	if isget == false {
 		//println("lock missed!")
 		return
 	}
-	if lock_owner == OWNER_ID {
+	if lockowner == OWNER {
 		//println("release lock")
 		c.Cache.Delete(lockkey)
 	} else {

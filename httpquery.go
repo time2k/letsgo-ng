@@ -27,30 +27,30 @@ import (
 	"github.com/bitly/go-simplejson"
 )
 
-//CacheHTTPer 为cachehttp的接口
-type CacheHTTPer interface {
+//HTTPQueryer 为cachehttp的接口
+type HTTPQueryer interface {
 	GetCacheExpire() int32
-	GetHTTP() *HTTPClient
+	GetBuilder() *HTTPQueryBuilder
 	GetDebugInfo() *DebugInfo
 	InitHTTP()
 }
 
-//LCacheHTTP 为cachehttp的结构体
-type LCacheHTTP struct {
+//HTTPQuery 为cachehttp的结构体
+type HTTPQuery struct {
 	CL              *http.Client
-	Cache           *LCache
+	Cache           *Cache
 	HTTPcounter     int
 	HTTPcounterLock sync.Mutex
 	Logfile         string
 }
 
-//NewCacheHTTP 返回一个LCacheHTTP的结构体指针
-func NewCacheHTTP() *LCacheHTTP {
-	return &LCacheHTTP{}
+//newHTTPQuery 返回一个HTTPQuery的结构体指针
+func newHTTPQuery() *HTTPQuery {
+	return &HTTPQuery{}
 }
 
-//Init 初始化LCacheHTTP结构体
-func (c *LCacheHTTP) Init(logfile string) {
+//Init 初始化HTTPQuery结构体
+func (c *HTTPQuery) Init(logfile string) {
 	c.CL = &http.Client{
 		Transport: &http.Transport{
 			Dial: func(netw, addr string) (net.Conn, error) {
@@ -70,19 +70,19 @@ func (c *LCacheHTTP) Init(logfile string) {
 }
 
 //SetCache 设置cache
-func (c *LCacheHTTP) SetCache(cache *LCache) {
+func (c *HTTPQuery) SetCache(cache *Cache) {
 	c.Cache = cache
 }
 
 //AddCounter 内置计数器++
-func (c *LCacheHTTP) AddCounter() {
+func (c *HTTPQuery) AddCounter() {
 	c.HTTPcounterLock.Lock()
 	defer c.HTTPcounterLock.Unlock()
 	c.HTTPcounter++
 }
 
 //SubCounter 内置计数器--
-func (c *LCacheHTTP) SubCounter() {
+func (c *HTTPQuery) SubCounter() {
 	c.HTTPcounterLock.Lock()
 	defer c.HTTPcounterLock.Unlock()
 	c.HTTPcounter--
@@ -97,7 +97,7 @@ func RandNum(ran int) int {
 }
 
 //GenUniqID 生成与时间有关的随机字符
-func (c *LCacheHTTP) GenUniqID() string {
+func (c *HTTPQuery) GenUniqID() string {
 	un := time.Now().UnixNano()
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(strconv.FormatInt(un, 10) + strconv.Itoa(RandNum(1000))))
@@ -105,7 +105,8 @@ func (c *LCacheHTTP) GenUniqID() string {
 	return cipherStr
 }
 
-func (c *LCacheHTTP) SampleHTTPClient(rq HTTPRequest, debug *DebugInfo, ret chan HTTPResponseResult) error {
+//SampleHTTPQuery 定义client
+func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan HTTPResponseResult) error {
 	//如果http请求响应日志有定义
 	httpLog := new(log.Logger)
 	httpinfo := ""
@@ -225,10 +226,10 @@ func (c *LCacheHTTP) SampleHTTPClient(rq HTTPRequest, debug *DebugInfo, ret chan
 
 	//降级标签采用host/path形式进行定义，比如说：geo.mob.app.letv.com/geo
 	//hystrix_tag := request.Host + request.Path
-	hystrix_tag := config.HYSTRIX_DEFAULT_TAG
+	hystrixtag := config.HYSTRIX_DEFAULT_TAG
 	// params, _ := url.ParseQuery(request.RawQuery)
 
-	hystrix.Do(hystrix_tag, func() error {
+	hystrix.Do(hystrixtag, func() error {
 		resp, err := c.CL.Do(req)
 		end := time.Since(start)
 		debug.Add(fmt.Sprintf("HTTP Time Cost: %f ms", end.Seconds()*1000))
@@ -308,9 +309,9 @@ func (c *LCacheHTTP) SampleHTTPClient(rq HTTPRequest, debug *DebugInfo, ret chan
 			RetryCount int
 		}
 
-		_, err_cache := c.Cache.LPUSH("http_retry_pool", RedisHTTPRetryPool{Request: rq})
-		if err_cache != nil {
-			println(err_cache.Error())
+		_, errcache := c.Cache.LPUSH("http_retry_pool", RedisHTTPRetryPool{Request: rq})
+		if errcache != nil {
+			println(errcache.Error())
 		}
 		ret <- httpRes
 		return nil
@@ -319,8 +320,8 @@ func (c *LCacheHTTP) SampleHTTPClient(rq HTTPRequest, debug *DebugInfo, ret chan
 	return nil
 }
 
-//Do 执行方法,支持http多协程请求并缓存
-func (c *LCacheHTTP) Do(cher CacheHTTPer) (map[string]interface{}, error) {
+//Run 执行方法,支持http多协程请求并缓存
+func (c *HTTPQuery) Run(cher HTTPQueryer) (map[string]interface{}, error) {
 	type CacheData struct {
 		NeedCache bool
 		CacheKey  string
@@ -329,10 +330,10 @@ func (c *LCacheHTTP) Do(cher CacheHTTPer) (map[string]interface{}, error) {
 		Cachedata []byte
 	}
 
-	X_UNIQ_ID := c.GenUniqID()
+	UNIQID := c.GenUniqID()
 
-	cache_expire := cher.GetCacheExpire()
-	ch := cher.GetHTTP()
+	expire := cher.GetCacheExpire()
+	ch := cher.GetBuilder()
 	cher.InitHTTP()
 
 	AllCacheData := make(map[string]CacheData) //key UniqID value:CacheData
@@ -342,37 +343,37 @@ func (c *LCacheHTTP) Do(cher CacheHTTPer) (map[string]interface{}, error) {
 	debug.Add(c.Cache.Show())
 
 	var NeedHTTPSum int
-	for _, each_http := range ch.Requests {
+	for _, eachhttp := range ch.Requests {
 		//添加letsgo User-agent
-		if len(each_http.Header) == 0 {
-			each_http.Header = make(map[string]string)
+		if len(eachhttp.Header) == 0 {
+			eachhttp.Header = make(map[string]string)
 		}
-		each_http.Header["User-Agent"] = "Letsgo-HTTP-Agent"
+		eachhttp.Header["User-Agent"] = "Letsgo-HTTP-Agent"
 
-		cache_key := "HTTP_" + each_http.UniqID
+		cachekey := "HTTP_" + eachhttp.UniqID
 		var retdata []byte
-		if each_http.NeedCache {
-			if isget, err := c.Cache.Get(cache_key, &retdata); isget != true { //cache miss or error
+		if eachhttp.NeedCache {
+			if isget, err := c.Cache.Get(cachekey, &retdata); isget != true { //cache miss or error
 				if err != nil {
-					return nil, fmt.Errorf("[error]CacheHTTP get cache:%s %s", err.Error(), X_UNIQ_ID)
+					return nil, fmt.Errorf("[error]CacheHTTP get cache:%s %s", err.Error(), UNIQID)
 				}
 
-				debug.Add(fmt.Sprintf("Cache Miss: %s", cache_key))
+				debug.Add(fmt.Sprintf("Cache Miss: %s", cachekey))
 				//debug.Add(fmt.Sprintf("CacheHTTP UniqID: %s", uniqid))
 
-				go c.SampleHTTPClient(each_http, debug, ch.ResponseCH)
+				go c.SampleHTTPQuery(eachhttp, debug, ch.ResponseCH)
 				c.AddCounter()
-				AllCacheData[each_http.UniqID] = CacheData{NeedCache: each_http.NeedCache, CacheKey: cache_key, Rtype: each_http.Rtype, HTTPError: false, Cachedata: nil}
+				AllCacheData[eachhttp.UniqID] = CacheData{NeedCache: eachhttp.NeedCache, CacheKey: cachekey, Rtype: eachhttp.Rtype, HTTPError: false, Cachedata: nil}
 				NeedHTTPSum++
 			} else { //get cache
-				debug.Add(fmt.Sprintf("Cache Get: %s", cache_key))
-				AllCacheData[each_http.UniqID] = CacheData{NeedCache: false, CacheKey: cache_key, Rtype: each_http.Rtype, HTTPError: false, Cachedata: retdata}
+				debug.Add(fmt.Sprintf("Cache Get: %s", cachekey))
+				AllCacheData[eachhttp.UniqID] = CacheData{NeedCache: false, CacheKey: cachekey, Rtype: eachhttp.Rtype, HTTPError: false, Cachedata: retdata}
 			}
 		} else {
 			//goroutine http
-			go c.SampleHTTPClient(each_http, debug, ch.ResponseCH)
+			go c.SampleHTTPQuery(eachhttp, debug, ch.ResponseCH)
 			c.AddCounter()
-			AllCacheData[each_http.UniqID] = CacheData{NeedCache: each_http.NeedCache, CacheKey: "", Rtype: each_http.Rtype, HTTPError: false, Cachedata: nil}
+			AllCacheData[eachhttp.UniqID] = CacheData{NeedCache: eachhttp.NeedCache, CacheKey: "", Rtype: eachhttp.Rtype, HTTPError: false, Cachedata: nil}
 			NeedHTTPSum++
 		}
 	}
@@ -389,45 +390,46 @@ func (c *LCacheHTTP) Do(cher CacheHTTPer) (map[string]interface{}, error) {
 				}
 				AllCacheData[i.UniqID] = data
 			} else {
-				return nil, fmt.Errorf("[error]CacheHTTP channel closed before reading: %s", X_UNIQ_ID)
+				return nil, fmt.Errorf("[error]CacheHTTP channel closed before reading: %s", UNIQID)
 			}
 		case <-time.After(config.CACHEHTTP_SELECT_TIMEOUT):
-			return nil, fmt.Errorf("[error]CacheHTTP channel timeout after %d second: %s", config.CACHEHTTP_SELECT_TIMEOUT, X_UNIQ_ID)
+			return nil, fmt.Errorf("[error]CacheHTTP channel timeout after %d second: %s", config.CACHEHTTP_SELECT_TIMEOUT, UNIQID)
 		}
 		NeedHTTPSum--
 		c.SubCounter()
 	}
 
-	ret_data := make(map[string]interface{}) // key:UniqID value:interface{}
-	for each_uniqid, each_cache_data := range AllCacheData {
-		if each_cache_data.CacheKey != "" && each_cache_data.NeedCache == true {
+	retdata := make(map[string]interface{}) // key:UniqID value:interface{}
+	for uniqid, cachedata := range AllCacheData {
+		if cachedata.CacheKey != "" && cachedata.NeedCache == true {
 			//downgrade get shorter TTL 60 second
-			each_cache_expire := cache_expire
-			if each_cache_data.HTTPError == true {
-				each_cache_expire = config.CACHEHTTP_DOWNGRADE_CACHE_EXPIRE
+			cacheexpire := expire
+			if cachedata.HTTPError == true {
+				cacheexpire = config.CACHEHTTP_DOWNGRADE_CACHE_EXPIRE
 			}
 
-			err := c.Cache.Set(each_cache_data.CacheKey, &each_cache_data.Cachedata, each_cache_expire)
+			err := c.Cache.Set(cachedata.CacheKey, &cachedata.Cachedata, cacheexpire)
 			if err != nil {
-				return nil, fmt.Errorf("[error]CacheHTTP set cache:%s %s", err.Error(), X_UNIQ_ID)
+				return nil, fmt.Errorf("[error]CacheHTTP set cache:%s %s", err.Error(), UNIQID)
 			}
-			debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", each_cache_data.CacheKey, each_cache_expire))
+			debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", cachedata.CacheKey, cacheexpire))
 		}
+
 		var ret interface{}
 		var err error
-		switch each_cache_data.Rtype {
+		switch cachedata.Rtype {
 		case "JSON":
-			ret, err = simplejson.NewJson(each_cache_data.Cachedata)
+			ret, err = simplejson.NewJson(cachedata.Cachedata)
 			if err != nil {
-				return nil, fmt.Errorf("[error]CacheHTTP DataToJson:%s %s", err.Error(), X_UNIQ_ID)
+				return nil, fmt.Errorf("[error]CacheHTTP DataToJson:%s %s", err.Error(), UNIQID)
 			}
 		case "HTML":
-			ret = string(each_cache_data.Cachedata)
+			ret = string(cachedata.Cachedata)
 		default:
-			ret = string(each_cache_data.Cachedata)
+			ret = string(cachedata.Cachedata)
 		}
-		ret_data[each_uniqid] = ret
+		retdata[uniqid] = ret
 	}
 
-	return ret_data, nil
+	return retdata, nil
 }

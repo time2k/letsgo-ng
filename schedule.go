@@ -13,27 +13,27 @@ import (
 
 //Scheduler 调度器接口
 type Scheduler interface {
-	GetSchedule() *Schedule
+	GetSchedule() *ScheduleBuilder
 	GetDebugInfo() *DebugInfo
 	InitSchedule()
 }
 
-//LSchedule 结构体
-type LSchedule struct {
+//Schedule 结构体
+type Schedule struct {
 }
 
-//NewSchedule 返回一个LSchedule类型指针
-func NewSchedule() *LSchedule {
-	return &LSchedule{}
+//newSchedule 返回一个Schedule类型指针
+func newSchedule() *Schedule {
+	return &Schedule{}
 }
 
-//Init LSchedule初始化
-func (c *LSchedule) Init() {
+//Init Schedule初始化
+func (c *Schedule) Init() {
 
 }
 
 //Run 运行多协程model函数调度器
-func (c *LSchedule) Run(ser Scheduler) ([]BaseReturnData, error) {
+func (c *Schedule) Run(ser Scheduler) ([]BaseReturnData, error) {
 	sch := ser.GetSchedule()
 	debug := ser.GetDebugInfo()
 	ser.InitSchedule()
@@ -78,7 +78,7 @@ func (c *LSchedule) Run(ser Scheduler) ([]BaseReturnData, error) {
 }
 
 //ScheduleWorker 调度器工人
-func (c *LSchedule) ScheduleWorker(sch *Schedule, debug *DebugInfo, index int, seqid string) {
+func (c *Schedule) ScheduleWorker(sch *ScheduleBuilder, debug *DebugInfo, index int, seqid string) {
 	start := time.Now()
 	//运行函数
 	ret := sch.FuncDescs[index].ModelFunc(sch.FuncDescs[index].CommP, sch.FuncDescs[index].Args...)
@@ -88,7 +88,7 @@ func (c *LSchedule) ScheduleWorker(sch *Schedule, debug *DebugInfo, index int, s
 }
 
 //GenUniqID 生成唯一id
-func (c *LSchedule) GenUniqID() string {
+func (c *Schedule) GenUniqID() string {
 	un := time.Now().UnixNano()
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(strconv.FormatInt(un, 10) + strconv.Itoa(RandNum(1000))))

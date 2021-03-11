@@ -7,18 +7,20 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-type LCache struct {
+//Cache 结构体
+type Cache struct {
 	Memcached            *Lmemcache
 	Redisc               *Lredisc
 	UseRediscOrMemcached int //使用redisc或者memcached 1-memcached 2-redisc
 }
 
-//NewCache 返回一个LCache结构体指针
-func NewLCache() *LCache {
-	return &LCache{}
+//newCache 返回一个Cache结构体指针
+func newCache() *Cache {
+	return &Cache{}
 }
 
-func (c *LCache) Init() {
+//Init 初始化
+func (c *Cache) Init() {
 	if c.Memcached != nil {
 		c.UseRediscOrMemcached = 1
 	}
@@ -28,48 +30,48 @@ func (c *LCache) Init() {
 }
 
 //SetMC 设置memcache连接
-func (c *LCache) SetMC(mc *Lmemcache) {
+func (c *Cache) SetMC(mc *Lmemcache) {
 	c.Memcached = mc
 }
 
 //SetRedis 设置memcache连接
-func (c *LCache) SetRedis(redisc *Lredisc) {
+func (c *Cache) SetRedis(redisc *Lredisc) {
 	c.Redisc = redisc
 }
 
 //Get 获得缓存
-func (c *LCache) Get(cache_key string, DataStruct interface{}) (bool, error) {
+func (c *Cache) Get(cachekey string, DataStruct interface{}) (bool, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	CacheGet := false
 	var err error
 	switch c.UseRediscOrMemcached {
 	case 1:
-		CacheGet, err = c.Memcached.Get(cache_key, DataStruct)
+		CacheGet, err = c.Memcached.Get(cachekey, DataStruct)
 		if err != nil {
-			return false, fmt.Errorf("[error]LCache Memcached get cache: %s", err.Error())
+			return false, fmt.Errorf("[error]Cache Memcached get cache: %s", err.Error())
 		}
 	case 2:
 		conn := c.Redisc.GetConn(true)
 		defer conn.Close()
 
-		isexist, err := redis.Int(conn.Do("EXISTS", cache_key))
+		isexist, err := redis.Int(conn.Do("EXISTS", cachekey))
 		if err != nil {
-			return false, fmt.Errorf("[error]LCache Redisc exists cmd: %s", err.Error())
+			return false, fmt.Errorf("[error]Cache Redisc exists cmd: %s", err.Error())
 		}
 		if isexist == 0 {
 			return false, nil
 		}
-		s, err := redis.String(conn.Do("GET", cache_key))
+		s, err := redis.String(conn.Do("GET", cachekey))
 		if err != nil {
-			return false, fmt.Errorf("[error]LCache Redisc get cache: %s", err.Error())
+			return false, fmt.Errorf("[error]Cache Redisc get cache: %s", err.Error())
 		}
 
 		if s == "" {
-			return false, fmt.Errorf("[error]LCache Redisc get cache empty")
+			return false, fmt.Errorf("[error]Cache Redisc get cache empty")
 		}
 
 		if err := json.UnmarshalFromString(s, DataStruct); err != nil {
-			return false, fmt.Errorf("[error]LCache Redisc get cache: %s", err.Error())
+			return false, fmt.Errorf("[error]Cache Redisc get cache: %s", err.Error())
 		}
 
 		CacheGet = true
@@ -78,13 +80,13 @@ func (c *LCache) Get(cache_key string, DataStruct interface{}) (bool, error) {
 }
 
 //Set 设置缓存
-func (c *LCache) Set(cache_key string, DataStruct interface{}, cache_expire int32) error {
+func (c *Cache) Set(cachekey string, DataStruct interface{}, expire int32) error {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	switch c.UseRediscOrMemcached {
 	case 1:
-		err := c.Memcached.Set(cache_key, DataStruct, cache_expire)
+		err := c.Memcached.Set(cachekey, DataStruct, expire)
 		if err != nil {
-			return fmt.Errorf("[error]LCache Memcached set cache: %s", err.Error())
+			return fmt.Errorf("[error]Cache Memcached set cache: %s", err.Error())
 		}
 	case 2:
 		conn := c.Redisc.GetConn(true)
@@ -92,32 +94,32 @@ func (c *LCache) Set(cache_key string, DataStruct interface{}, cache_expire int3
 
 		str, err := json.MarshalToString(DataStruct)
 		if err != nil {
-			return fmt.Errorf("[error]LCache Redisc marshall struct: %s", err.Error())
+			return fmt.Errorf("[error]Cache Redisc marshall struct: %s", err.Error())
 		}
 
-		_, err2 := conn.Do("SET", cache_key, str, "EX", cache_expire)
+		_, err2 := conn.Do("SET", cachekey, str, "EX", expire)
 		if err2 != nil {
-			return fmt.Errorf("[error]LCache Redisc set cache: %s", err2.Error())
+			return fmt.Errorf("[error]Cache Redisc set cache: %s", err2.Error())
 		}
 	}
 	return nil
 }
 
 //Delete 删除缓存
-func (c *LCache) Delete(cache_key string) error {
+func (c *Cache) Delete(cachekey string) error {
 	switch c.UseRediscOrMemcached {
 	case 1:
-		err := c.Memcached.Delete(cache_key)
+		err := c.Memcached.Delete(cachekey)
 		if err != nil {
-			return fmt.Errorf("[error]LCache Memcached delete cache: %s", err.Error())
+			return fmt.Errorf("[error]Cache Memcached delete cache: %s", err.Error())
 		}
 	case 2:
 		conn := c.Redisc.GetConn(true)
 		defer conn.Close()
 
-		_, err2 := conn.Do("DEL", cache_key)
+		_, err2 := conn.Do("DEL", cachekey)
 		if err2 != nil {
-			return fmt.Errorf("[error]LCache Redisc delete cache: %s", err2.Error())
+			return fmt.Errorf("[error]Cache Redisc delete cache: %s", err2.Error())
 		}
 
 	}
@@ -125,7 +127,7 @@ func (c *LCache) Delete(cache_key string) error {
 }
 
 //SetNX only for redis distribut lock
-func (c *LCache) SetNX(cache_key string, DataStruct interface{}, cache_expire int32) (int, error) {
+func (c *Cache) SetNX(cachekey string, DataStruct interface{}, expire int32) (int, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 	switch c.UseRediscOrMemcached {
@@ -137,10 +139,10 @@ func (c *LCache) SetNX(cache_key string, DataStruct interface{}, cache_expire in
 
 		str, err := json.MarshalToString(DataStruct)
 		if err != nil {
-			return 0, fmt.Errorf("[error]LCache Redisc marshall struct: %s", err.Error())
+			return 0, fmt.Errorf("[error]Cache Redisc marshall struct: %s", err.Error())
 		}
 
-		_, err2 := redis.String(conn.Do("SET", cache_key, str, "NX", "PX", cache_expire))
+		_, err2 := redis.String(conn.Do("SET", cachekey, str, "NX", "PX", expire))
 
 		if err2 == redis.ErrNil {
 			// The lock was not successful, it already exists.
@@ -155,7 +157,7 @@ func (c *LCache) SetNX(cache_key string, DataStruct interface{}, cache_expire in
 }
 
 //BRPOP only for redis queue
-func (c *LCache) BRPOP(cache_key string, DataStruct interface{}, timeout int32) (bool, error) {
+func (c *Cache) BRPOP(cachekey string, DataStruct interface{}, timeout int32) (bool, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 	switch c.UseRediscOrMemcached {
@@ -165,13 +167,13 @@ func (c *LCache) BRPOP(cache_key string, DataStruct interface{}, timeout int32) 
 		conn := c.Redisc.GetConn(true)
 		defer conn.Close()
 
-		s, err := redis.ByteSlices(conn.Do("BRPOP", cache_key, timeout))
+		s, err := redis.ByteSlices(conn.Do("BRPOP", cachekey, timeout))
 		if err != nil {
-			return false, fmt.Errorf("[error]LCache Redisc BRPOP %s", err.Error())
+			return false, fmt.Errorf("[error]Cache Redisc BRPOP %s", err.Error())
 		}
 
 		if err := json.UnmarshalFromString(string(s[1]), DataStruct); err != nil {
-			return false, fmt.Errorf("[error]LCache Redisc BRPOP: %s", err.Error())
+			return false, fmt.Errorf("[error]Cache Redisc BRPOP: %s", err.Error())
 		}
 
 		return true, nil
@@ -180,7 +182,7 @@ func (c *LCache) BRPOP(cache_key string, DataStruct interface{}, timeout int32) 
 }
 
 //LPUSH only for redis queue
-func (c *LCache) LPUSH(cache_key string, DataStruct interface{}) (int, error) {
+func (c *Cache) LPUSH(cachekey string, DataStruct interface{}) (int, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 	switch c.UseRediscOrMemcached {
@@ -192,12 +194,12 @@ func (c *LCache) LPUSH(cache_key string, DataStruct interface{}) (int, error) {
 
 		str, err := json.MarshalToString(DataStruct)
 		if err != nil {
-			return 0, fmt.Errorf("[error]LCache Redisc marshall struct: %s", err.Error())
+			return 0, fmt.Errorf("[error]Cache Redisc marshall struct: %s", err.Error())
 		}
 
-		s, err := redis.Int(conn.Do("LPUSH", cache_key, str))
+		s, err := redis.Int(conn.Do("LPUSH", cachekey, str))
 		if err != nil {
-			return 0, fmt.Errorf("[error]LCache Redisc LPUSH %s", err.Error())
+			return 0, fmt.Errorf("[error]Cache Redisc LPUSH %s", err.Error())
 		}
 
 		return s, nil
@@ -206,7 +208,7 @@ func (c *LCache) LPUSH(cache_key string, DataStruct interface{}) (int, error) {
 }
 
 //DO only for redis
-func (c *LCache) DO(CMD string, Params ...interface{}) (interface{}, error) {
+func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 	switch c.UseRediscOrMemcached {
 	case 1:
 		return nil, fmt.Errorf("Memcached Don't support DO")
@@ -220,12 +222,12 @@ func (c *LCache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 }
 
 //Show 显示设置
-func (c *LCache) Show() string {
+func (c *Cache) Show() string {
 	switch c.UseRediscOrMemcached {
 	case 1:
-		return "LCache use Memcached"
+		return "Cache use Memcached"
 	case 2:
-		return "LCache use Redisc"
+		return "Cache use Redisc"
 	}
 	return ""
 }
