@@ -41,7 +41,7 @@ func GenCommparams(c echo.Context) CommonParams {
 		} else {
 			commp.SetParam("ip", c.RealIP())
 		}
-		commp.SetParam("devid", params[5])
+		commp.SetParam("did", params[5])
 		commp.SetParam("useragent", c.Request().UserAgent())
 		commp.SetParam("debug", params[6])
 	}
