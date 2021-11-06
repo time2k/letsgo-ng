@@ -13,7 +13,7 @@ import (
 
 //Scheduler 调度器接口
 type Scheduler interface {
-	GetSchedule() *ScheduleBuilder
+	GetBuilder() *ScheduleBuilder
 	GetDebugInfo() *DebugInfo
 	InitSchedule()
 }
@@ -34,7 +34,7 @@ func (c *Schedule) Init() {
 
 //Run 运行多协程model函数调度器
 func (c *Schedule) Run(ser Scheduler) ([]BaseReturnData, error) {
-	sch := ser.GetSchedule()
+	sch := ser.GetBuilder()
 	debug := ser.GetDebugInfo()
 	ser.InitSchedule()
 
