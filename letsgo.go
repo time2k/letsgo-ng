@@ -174,7 +174,7 @@ func (L *Letsgo) InitLog(LogFileName string) {
 		log.Panicf("Can't open the log file %s", LogFileName)
 	}
 	L.LoggerFile = logfile
-	L.Logger = log.New(logfile, "LetsGo Log", log.Ldate|log.Ltime|log.Llongfile)
+	L.Logger = log.New(logfile, "[LetsGo Log]", log.Ldate|log.Ltime|log.Llongfile)
 }
 
 //InitSchedule 初始化并发器
