@@ -76,8 +76,8 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	DbName := cqer.GetDbname()
 	UseCache := cqer.IsUseCache()
 
-	debug.Add(c.Cache.Show())
-	fmt.Println(DB)
+	//debug.Add(c.Cache.Show())
+	//fmt.Println(DB)
 	if UseCache == true { //do use cache
 		fmt.Println(Result)
 		if isget, err := c.Cache.Get(CacheKey, Result); isget != true { //cache miss or error
