@@ -76,6 +76,14 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	DbName := cqer.GetDbname()
 	UseCache := cqer.IsUseCache()
 
+	//Result Must Be A ptr to slice
+	if reflect.TypeOf(Result).Kind() != reflect.Ptr {
+		return false, fmt.Errorf("[CacheQuery]Result must be a Pointer")
+	}
+	//result type element and result value element
+	rtype := reflect.TypeOf(Result).Elem()
+	rvalue := reflect.ValueOf(Result).Elem()
+
 	if UseCache == true { //do use cache
 		if isget, err := c.Cache.Get(CacheKey, Result); isget != true { //cache miss or error
 			if err != nil {
@@ -102,20 +110,26 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	debug.Add(fmt.Sprintf("Get DB Query: %s , Query Condition: %s", SQL, SQLcondition))
 
 	if rows.Next() {
-		err = rows.Err()
+		err := rows.Err()
 		if err != nil {
 			return false, fmt.Errorf("[error]CacheQuery DB rows.next action: %s", err.Error())
 		}
-		s := reflect.Indirect(reflect.ValueOf(Result).Elem())
-		len := s.NumField()
-		scanp := make([]interface{}, len)
-		for k := 0; k < len; k++ {
-			scanp[k] = s.Field(k).Addr().Interface()
-		}
-		err = rows.Scan(scanp...)
-
-		if err != nil {
-			return false, fmt.Errorf("[error]CacheQuery DB scan action: %s", err.Error())
+		if rtype.Kind() == reflect.Struct {
+			//s := reflect.Indirect(rve)
+			len := rvalue.NumField()
+			scanp := make([]interface{}, len)
+			for k := 0; k < len; k++ {
+				scanp[k] = rvalue.Field(k).Addr().Interface()
+			}
+			err = rows.Scan(scanp...)
+			if err != nil {
+				return false, fmt.Errorf("[error]CacheQuery DB scan action: %s", err.Error())
+			}
+		} else {
+			err = rows.Scan(rvalue.Addr().Interface())
+			if err != nil {
+				return false, fmt.Errorf("[error]CacheQuery DB scan action: %s", err.Error())
+			}
 		}
 
 		err = c.Cache.Set(CacheKey, Result, CacheExpire)
@@ -146,6 +160,14 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	DbName := cqer.GetDbname()
 	UseCache := cqer.IsUseCache()
 
+	//Result Must Be A ptr to slice
+	if reflect.TypeOf(Result).Kind() != reflect.Ptr && reflect.TypeOf(Result).Elem().Kind() != reflect.Slice {
+		return false, fmt.Errorf("[CacheQuery]Result must be a Pointer of slice")
+	}
+	//result type element and result value element
+	rtype := reflect.TypeOf(Result).Elem().Elem()
+	rvalue := reflect.ValueOf(Result).Elem() //indeed a slice
+
 	if UseCache == true { //do use cache
 		if isget, err := c.Cache.Get(CacheKey, Result); isget != true { //cache miss or error
 			if err != nil {
@@ -172,35 +194,39 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 
 	debug.Add(fmt.Sprintf("Get DB Query: %s , Query Condition: %s", SQL, SQLcondition))
 
-	if reflect.TypeOf(Result).Kind() != reflect.Ptr && reflect.TypeOf(Result).Elem().Kind() != reflect.Slice {
-		return false, fmt.Errorf("[CacheQuery]Result must be a Pointer of slice")
-	}
-
-	news := reflect.TypeOf(Result).Elem().Elem()
 	rowc := 0
+
 	for rows.Next() {
-		err = rows.Err()
+		err := rows.Err()
 		if err != nil {
 			return false, fmt.Errorf("[CacheQuery]DB rows.next action: %s", err.Error())
 		}
 
-		dp := reflect.New(news)
+		dp := reflect.New(rtype)
 		dx := reflect.Indirect(dp)
 
-		len := dx.NumField()
-		scanp := make([]interface{}, len)
-		for k := 0; k < len; k++ {
-			scanp[k] = dx.Field(k).Addr().Interface()
-		}
-		err = rows.Scan(scanp...)
-		if err != nil {
-			return false, fmt.Errorf("[CacheQuery]DB scan action: %s", err.Error())
+		if rtype.Kind() == reflect.Struct { //like "select a,b,c from" and result like []struct {a int,b string,c float}
+			len := dx.NumField()
+			scanp := make([]interface{}, len)
+			for k := 0; k < len; k++ {
+				scanp[k] = dx.Field(k).Addr().Interface()
+			}
+			err := rows.Scan(scanp...)
+			if err != nil {
+				return false, fmt.Errorf("[CacheQuery]DB scan action: %s", err.Error())
+			}
+		} else {
+			err := rows.Scan(dx.Addr().Interface())
+			if err != nil {
+				return false, fmt.Errorf("[CacheQuery]DB scan action: %s", err.Error())
+			}
 		}
 		//reflect type of append into interface{} of a pointer of slice
-		reflect.ValueOf(Result).Elem().Set(reflect.Append(reflect.ValueOf(Result).Elem(), dp.Elem()))
+		rvalue.Set(reflect.Append(rvalue, dp.Elem()))
 
 		rowc++
 	}
+
 	if rowc == 0 {
 		return false, nil
 	}
