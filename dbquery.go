@@ -131,10 +131,11 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 				return false, fmt.Errorf("[error]CacheQuery DB scan action: %s", err.Error())
 			}
 		}
-
-		err = c.Cache.Set(CacheKey, Result, CacheExpire)
-		if err != nil {
-			return false, fmt.Errorf("[error]CacheQuery set cache: %s", err.Error())
+		if UseCache == true { //do use cache
+			err = c.Cache.Set(CacheKey, Result, CacheExpire)
+			if err != nil {
+				return false, fmt.Errorf("[error]CacheQuery set cache: %s", err.Error())
+			}
 		}
 
 		debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", CacheKey, CacheExpire))
@@ -230,9 +231,11 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	if rowc == 0 {
 		return false, nil
 	}
-	err = c.Cache.Set(CacheKey, Result, CacheExpire)
-	if err != nil {
-		return false, fmt.Errorf("[CacheQuery]set cache: %s", err.Error())
+	if UseCache == true { //do use cache
+		err = c.Cache.Set(CacheKey, Result, CacheExpire)
+		if err != nil {
+			return false, fmt.Errorf("[CacheQuery]set cache: %s", err.Error())
+		}
 	}
 	debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", CacheKey, CacheExpire))
 
