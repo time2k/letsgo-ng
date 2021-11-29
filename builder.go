@@ -7,7 +7,8 @@ package letsgo
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"net/url"
+	"strconv"
+	"time"
 
 	"github.com/time2k/letsgo-ng/config"
 )
@@ -77,7 +78,7 @@ func (httpm *HTTPQueryBuilder) GetHTTPUniqid(rtype string, method string, urls s
 	UniqBase += rtype + "|"
 	UniqBase += method + "|"
 	UniqBase += urls + "|"
-	if header != nil {
+	/*if header != nil {
 		data := make(url.Values)
 		for k, v := range header {
 			data[k] = []string{v}
@@ -90,7 +91,8 @@ func (httpm *HTTPQueryBuilder) GetHTTPUniqid(rtype string, method string, urls s
 			data[k] = []string{v.(string)}
 		}
 		UniqBase += data.Encode() + "|"
-	}
+	}*/
+	UniqBase += strconv.FormatInt(time.Now().UnixNano(), 10)
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(UniqBase))
 	return hex.EncodeToString(md5Ctx.Sum(nil))

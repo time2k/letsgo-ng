@@ -136,9 +136,8 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 			if err != nil {
 				return false, fmt.Errorf("[error]CacheQuery set cache: %s", err.Error())
 			}
+			debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", CacheKey, CacheExpire))
 		}
-
-		debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", CacheKey, CacheExpire))
 	} else {
 		return false, nil
 	}
@@ -236,8 +235,8 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("[CacheQuery]set cache: %s", err.Error())
 		}
+		debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", CacheKey, CacheExpire))
 	}
-	debug.Add(fmt.Sprintf("Cache Set: %s TTL: %d", CacheKey, CacheExpire))
 
 	return true, nil
 }
