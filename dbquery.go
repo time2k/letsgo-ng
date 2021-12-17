@@ -252,7 +252,13 @@ func (c *DBQuery) EXEC(cqer DBQueryer) (int64, error) {
 	debug := cqer.GetDebugInfo()
 
 	debug.Add(fmt.Sprintf("EXEC DB Query: %s , Query Condition: %s", SQL, SQLcondition))
-	stmt, err := c.DBset[cqer.GetDbname()].Master.Prepare(SQL)
+
+	DbName := cqer.GetDbname()
+	if _, ok := c.DBset[DbName]; !ok { //key不存在
+		return 0, fmt.Errorf("[error]CacheQuery exec: can't find this db config '%s'", DbName)
+	}
+
+	stmt, err := c.DBset[DbName].Master.Prepare(SQL)
 	if err != nil {
 		return 0, fmt.Errorf("[error]CacheQuery stmt sql: %s", err.Error())
 	}

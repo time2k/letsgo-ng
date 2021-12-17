@@ -169,7 +169,11 @@ func (c *Cache) BRPOP(cachekey string, DataStruct interface{}, timeout int32) (b
 
 		s, err := redis.ByteSlices(conn.Do("BRPOP", cachekey, timeout))
 		if err != nil {
-			return false, fmt.Errorf("[error]Cache Redisc BRPOP %s", err.Error())
+			if err != redis.ErrNil {
+				return false, fmt.Errorf("[error]Cache Redisc BRPOP %s", err.Error())
+			} else {
+				return false, nil
+			}
 		}
 
 		if err := json.UnmarshalFromString(string(s[1]), DataStruct); err != nil {
