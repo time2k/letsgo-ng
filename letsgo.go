@@ -61,6 +61,7 @@ type Letsgo struct {
 	Schedules     *Schedule
 	Logger        *log.Logger
 	LoggerFile    *os.File
+	ContextSet    contextSet
 }
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
@@ -209,6 +210,12 @@ func (L *Letsgo) InitCacheLock() {
 	L.CacheLock.Cache = L.Cache
 }
 
+//InitContextSet 初始化上下文集合
+func (L *Letsgo) InitContextSet() {
+	//init ContextSet
+	L.ContextSet = newContextSet()
+}
+
 //Close 关闭Letsgo框架
 func (L *Letsgo) Close() {
 	for _, v := range L.DBC {
@@ -222,6 +229,8 @@ func (L *Letsgo) Close() {
 	L.LoggerFile.Close()
 
 	L.Cache.Redisc.Redisc.Close()
+
+	L.ContextSet.CancelAll()
 }
 
 //Default 框架自持变量
