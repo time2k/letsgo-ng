@@ -59,6 +59,15 @@ func (ct contextSet) Get(ctxname string) (context.Context, context.CancelFunc, e
 	return gt.CTX, gt.CTXCancelFunc, nil
 }
 
+//删除一个ctx
+func (ct contextSet) Remove(ctxname string) error {
+	if _, ok := ct[ctxname]; !ok {
+		return errors.New("[error]contextSet Remove none-exists ctxname:" + ctxname)
+	}
+	delete(ct, ctxname)
+	return nil
+}
+
 //依次cancel所有ctx
 func (ct contextSet) CancelAll() {
 	for _, ctxo := range ct {
