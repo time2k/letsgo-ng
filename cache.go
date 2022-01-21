@@ -247,7 +247,7 @@ func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 	case 1:
 		return nil, fmt.Errorf("Memcached Don't support GETSUBCONN")
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redisc.GetConn(false) //can't use redisc retry_conn
 		//defer conn.Close()
 		psc := redis.PubSubConn{Conn: conn}
 
