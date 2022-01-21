@@ -259,7 +259,7 @@ func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 	return nil, nil
 }
 
-//SUB only for redis and use conn default timeout，you should use in "for" loop statment
+//SUB only for redis and use conn default timeout，you should use in "for" loop statment for sub
 func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 	switch c.UseRediscOrMemcached {
 	case 1:
