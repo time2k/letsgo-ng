@@ -225,6 +225,56 @@ func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 	return nil, nil
 }
 
+//PUB only for redis
+func (c *Cache) PUB(channelname string, content string) error {
+	switch c.UseRediscOrMemcached {
+	case 1:
+		return fmt.Errorf("Memcached Don't support PUB")
+	case 2:
+		conn := c.Redisc.GetConn(true)
+		defer conn.Close()
+
+		if _, err := conn.Do("PUBLISH", "c1", "hello"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+//GetSubConn only for redis
+func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
+	switch c.UseRediscOrMemcached {
+	case 1:
+		return nil, fmt.Errorf("Memcached Don't support GETSUBCONN")
+	case 2:
+		conn := c.Redisc.GetConn(true)
+		//defer conn.Close()
+		psc := redis.PubSubConn{Conn: conn}
+
+		if err := psc.Subscribe(redis.Args{}.AddFlat(channelname)...); err != nil {
+			return nil, err
+		}
+		return &psc, nil
+	}
+	return nil, nil
+}
+
+//SUB only for redis and use conn default timeout，you should use in "for" loop statment
+func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
+	switch c.UseRediscOrMemcached {
+	case 1:
+		return "", fmt.Errorf("Memcached Don't support SUB")
+	case 2:
+		switch n := psc.Receive().(type) {
+		case error:
+			return "", n
+		case redis.Message:
+			return string(n.Data), nil
+		}
+	}
+	return "", nil
+}
+
 //Show 显示设置
 func (c *Cache) Show() string {
 	switch c.UseRediscOrMemcached {
