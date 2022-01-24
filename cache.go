@@ -271,8 +271,8 @@ func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 			return "", n
 		case redis.Message:
 			return string(n.Data), nil
-		case redis.Subscription: //ignore subsciption message
-			c.SUB(psc)
+		case redis.Subscription: //ignore subsciption message, recursive next
+			return c.SUB(psc)
 		}
 	}
 	return "", nil
@@ -289,8 +289,8 @@ func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string
 			return "", n
 		case redis.Message:
 			return string(n.Data), nil
-		case redis.Subscription: //ignore subsciption message
-			c.SUB(psc)
+		case redis.Subscription: //ignore subsciption message, recursive next
+			return c.SUB(psc)
 		}
 	}
 	return "", nil
