@@ -235,7 +235,7 @@ func (c *Cache) PUB(channelname string, content string) error {
 		conn := c.Redisc.GetConn(true)
 		defer conn.Close()
 
-		if _, err := conn.Do("PUBLISH", "c1", "hello"); err != nil {
+		if _, err := conn.Do("PUBLISH", channelname, content); err != nil {
 			return err
 		}
 	}
