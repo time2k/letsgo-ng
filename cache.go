@@ -2,6 +2,7 @@ package letsgo
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 	jsoniter "github.com/json-iterator/go"
@@ -270,6 +271,26 @@ func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 			return "", n
 		case redis.Message:
 			return string(n.Data), nil
+		case redis.Subscription: //ignore subsciption message
+			c.SUB(psc)
+		}
+	}
+	return "", nil
+}
+
+//SUB only for redis and use timeout param，you should use in "for" loop statment for sub
+func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string, error) {
+	switch c.UseRediscOrMemcached {
+	case 1:
+		return "", fmt.Errorf("Memcached Don't support SUB")
+	case 2:
+		switch n := psc.ReceiveWithTimeout(timeout).(type) {
+		case error:
+			return "", n
+		case redis.Message:
+			return string(n.Data), nil
+		case redis.Subscription: //ignore subsciption message
+			c.SUB(psc)
 		}
 	}
 	return "", nil
