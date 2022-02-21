@@ -64,6 +64,9 @@ func (c *Cache) Get(cachekey string, DataStruct interface{}) (bool, error) {
 		}
 		s, err := redis.String(conn.Do("GET", cachekey))
 		if err != nil {
+			if err == redis.ErrNil {
+				return false, nil
+			}
 			return false, fmt.Errorf("[error]Cache Redisc get cache: %s", err.Error())
 		}
 
