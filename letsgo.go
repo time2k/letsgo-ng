@@ -191,7 +191,7 @@ func (L *Letsgo) InitJSONRPC(RPCConfig map[string]config.RPCconfig) {
 	L.JSONRPCClient = NewJSONRPCClient()
 	L.JSONRPCClient.Init()
 	for service, rpcconfig := range RPCConfig {
-		L.JSONRPCClient.Set(service, rpcconfig.Network, rpcconfig.Address)
+		L.JSONRPCClient.Set(service, rpcconfig.Network, rpcconfig.Address, rpcconfig.MicroserviceName)
 	}
 }
 
