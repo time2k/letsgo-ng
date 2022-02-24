@@ -13,7 +13,7 @@ import (
 //ConsulClient 结构体
 type ConsulClient struct {
 	Client    *consulapi.Client
-	IsActive  bool
+	Active    bool
 	ServiceID map[string]*consulapi.AgentServiceRegistration
 	Lock      sync.Mutex
 }
@@ -33,7 +33,8 @@ func (c *ConsulClient) Init() {
 	}
 
 	c.Client = client
-	c.IsActive = true
+	c.ServiceID = make(map[string]*consulapi.AgentServiceRegistration)
+	c.Active = true
 }
 
 //使用网卡设备名interface获取ip
@@ -129,4 +130,9 @@ func (c *ConsulClient) ServiceFind(service_name string) string {
 		log.Println("ConsulClient ServiceFind service_name not found")
 	}
 	return fmt.Sprint(services[service_name].Address, ":", services[service_name].Port)
+}
+
+//微服务客户端是否活跃
+func (c *ConsulClient) IsActive() bool {
+	return c.Active
 }

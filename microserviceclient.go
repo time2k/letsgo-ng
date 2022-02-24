@@ -7,4 +7,5 @@ type MicroServiceClienter interface {
 	DeregisterService(service_name string)
 	DeregisterAllService()
 	ServiceFind(service_name string) string
+	IsActive() bool
 }
