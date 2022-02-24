@@ -60,6 +60,19 @@ func GetInterfaceIP(name string) (string, error) {
 	return "", err
 }
 
+//使用网卡设备名interface获取ip,依次获取
+func SeqGetInterfaceIP(name ...string) string {
+	internalip := ""
+	var err error
+	for _, eachname := range name {
+		internalip, err = GetInterfaceIP(eachname)
+		if internalip != "" && err == nil {
+			return internalip
+		}
+	}
+	return ""
+}
+
 //注册服务
 func (c *ConsulClient) RegisterService(service_name string, service_port int) error {
 	hostname, err := os.Hostname() //使用hostname作为serviceid
@@ -68,20 +81,9 @@ func (c *ConsulClient) RegisterService(service_name string, service_port int) er
 		return err
 	}
 
-	internalip, err := GetInterfaceIP("eth0")
-	if err != nil {
-		log.Println("[error]ConsulClient GetInterfaceIP eth0 error:", err.Error())
-		return err
-	}
+	internalip := SeqGetInterfaceIP("eth0", "en0")
 	if internalip == "" {
-		internalip, err = GetInterfaceIP("en0")
-		if err != nil {
-			log.Println("[error]ConsulClient GetInterfaceIP en0 error:", err.Error())
-			return err
-		}
-		if internalip == "" {
-			internalip = "127.0.0.1"
-		}
+		internalip = "127.0.0.1"
 	}
 
 	registration := new(consulapi.AgentServiceRegistration)
