@@ -24,50 +24,61 @@ func NewConsulClient() *ConsulClient {
 }
 
 //Init ConsulClient
-func (c *ConsulClient) Init() {
+func (c *ConsulClient) Init() error {
 	config := consulapi.DefaultConfig()
 
 	client, err := consulapi.NewClient(config)
 	if err != nil {
-		log.Println("ConsulClient init error : ", err.Error())
+		log.Println("[error]ConsulClient init error : ", err.Error())
+		return err
 	}
 
 	c.Client = client
 	c.Active = true
+	return nil
 }
 
 //使用网卡设备名interface获取ip
-func GetInterfaceIP(name string) string {
+func GetInterfaceIP(name string) (string, error) {
 	iface, err := net.InterfaceByName(name) //here your interface
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	addrs, err := iface.Addrs()
 	if err != nil {
-		return ""
+		return "", err
 	}
 	for _, address := range addrs {
 		// check the address type and if it is not a loopback the display it
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
+				return ipnet.IP.String(), nil
 			}
 		}
 	}
-	return ""
+	return "", err
 }
 
 //注册服务
-func (c *ConsulClient) RegisterService(service_name string, service_port int) {
+func (c *ConsulClient) RegisterService(service_name string, service_port int) error {
 	hostname, err := os.Hostname() //使用hostname作为serviceid
 	if err != nil {
-		log.Println("ConsulClient RegisterService get os.Hostname error:", err.Error())
+		log.Println("[error]ConsulClient RegisterService get os.Hostname error:", err.Error())
+		return err
 	}
 
-	internalip := GetInterfaceIP("eth0")
+	internalip, err := GetInterfaceIP("eth0")
+	if err != nil {
+		log.Println("[error]ConsulClient GetInterfaceIP eth0 error:", err.Error())
+		return err
+	}
 	if internalip == "" {
-		internalip = GetInterfaceIP("en0")
+		internalip, err = GetInterfaceIP("en0")
+		if err != nil {
+			log.Println("[error]ConsulClient GetInterfaceIP en0 error:", err.Error())
+			return err
+		}
 		if internalip == "" {
 			internalip = "127.0.0.1"
 		}
@@ -88,48 +99,55 @@ func (c *ConsulClient) RegisterService(service_name string, service_port int) {
 
 	err = c.Client.Agent().ServiceRegister(registration)
 	if err != nil {
-		log.Println("ConsulClient RegisterService register server error : ", err.Error())
-		return
+		log.Println("[error]ConsulClient RegisterService register server error : ", err.Error())
+		return err
 	}
 	c.Lock.Lock()
 	c.ServiceID = append(c.ServiceID, registration.ID)
 	c.Lock.Unlock()
+	return nil
 }
 
 //删除服务
-func (c *ConsulClient) DeregisterService(service_name string) {
+func (c *ConsulClient) DeregisterService(service_name string) error {
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Println("ConsulClient DeregisterService get os.Hostname error:", err.Error())
+		log.Println("[error]ConsulClient DeregisterService get os.Hostname error:", err.Error())
+		return err
 	}
 
 	err = c.Client.Agent().ServiceDeregister(service_name + ":" + hostname)
 	if err != nil {
-		log.Println("ConsulClient DeregisterService deregister service error : ", err.Error())
+		log.Println("[error]ConsulClient DeregisterService deregister service error : ", err.Error())
+		return err
 	}
+	return nil
 }
 
 //删除所有服务
-func (c *ConsulClient) DeregisterAllService() {
+func (c *ConsulClient) DeregisterAllService() error {
 	for _, id := range c.ServiceID {
-		println(id)
 		err := c.Client.Agent().ServiceDeregister(id)
 		if err != nil {
-			log.Println("ConsulClient DeregisterAllService deregister service error : ", err.Error())
+			log.Println("[error]ConsulClient DeregisterAllService deregister service error : ", err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
 //发现服务 返回ip:port字符串
-func (c *ConsulClient) ServiceFind(service_name string) string {
+func (c *ConsulClient) ServiceFind(service_name string) (string, error) {
 	services, err := c.Client.Agent().Services()
 	if err != nil {
-		log.Println("ConsulClient ServiceFind get service error : ", err.Error())
+		log.Println("[error]ConsulClient ServiceFind get service error : ", err.Error())
+		return "", err
 	}
 	if _, found := services[service_name]; !found {
-		log.Println("ConsulClient ServiceFind service_name not found")
+		log.Println("[error]ConsulClient ServiceFind service_name not found")
+		return "", err
 	}
-	return fmt.Sprint(services[service_name].Address, ":", services[service_name].Port)
+	return fmt.Sprint(services[service_name].Address, ":", services[service_name].Port), nil
 }
 
 //微服务客户端是否活跃
