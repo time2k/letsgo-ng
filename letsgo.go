@@ -62,7 +62,7 @@ type Letsgo struct {
 	Logger             *log.Logger
 	LoggerFile         *os.File
 	ContextSet         contextSet
-	MicroServiceClient MicroServiceClienter
+	MicroserviceClient MicroserviceClienter
 }
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
