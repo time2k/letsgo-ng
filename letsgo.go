@@ -239,7 +239,7 @@ func (L *Letsgo) Close() {
 		L.LoggerFile.Close()
 	}
 
-	if L.Cache.Redisc != nil {
+	if L.Cache != nil && L.Cache.Redisc != nil {
 		L.Cache.Redisc.Redisc.Close()
 	}
 
