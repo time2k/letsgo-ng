@@ -51,3 +51,18 @@ func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
 
 	return client, nil
 }
+
+//DialWithAddr 手动连接到一个rpc服务器
+func (c *JSONRPCClient) DialWithAddr(service string, addr string) (*rpc.Client, error) {
+	thisservice, ok := c.Service[service]
+	if ok != true {
+		return nil, fmt.Errorf("[error]jsonrpc Call unknown service: %s", service)
+	}
+
+	client, err := jsonrpc.Dial(thisservice.Network, addr)
+	if err != nil {
+		return nil, fmt.Errorf("[error]jsonrpc dial: %s", err.Error())
+	}
+
+	return client, nil
+}

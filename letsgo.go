@@ -62,6 +62,7 @@ type Letsgo struct {
 	Logger        *log.Logger
 	LoggerFile    *os.File
 	ContextSet    contextSet
+	MicroService  *ConsulClient
 }
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
@@ -214,6 +215,12 @@ func (L *Letsgo) InitCacheLock() {
 func (L *Letsgo) InitContextSet() {
 	//init ContextSet
 	L.ContextSet = newContextSet()
+}
+
+//InitMicroService 初始化微服务治理
+func (L *Letsgo) InitMicroService() {
+	//init Consul
+	L.MicroService = NewConsulClient()
 }
 
 //Close 关闭Letsgo框架

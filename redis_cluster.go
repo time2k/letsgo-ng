@@ -2,6 +2,7 @@ package letsgo
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/time2k/letsgo-ng/config"
@@ -40,7 +41,7 @@ func (c *Lredisc) GetConn(Retry bool) redis.Conn {
 	if Retry == true {
 		retryConn, err := redisc.RetryConn(rediscconn, 3, 100*time.Millisecond)
 		if err != nil {
-			println("RetryConn failed:", err)
+			log.Fatal("RetryConn failed:", err)
 		}
 		return retryConn
 	} else {
