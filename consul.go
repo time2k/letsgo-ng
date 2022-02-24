@@ -64,7 +64,10 @@ func (c *ConsulClient) RegisterService(service_name string, service_port int) {
 
 	internalip := GetInterfaceIP("eth0")
 	if internalip == "" {
-		internalip = "127.0.0.1"
+		internalip = GetInterfaceIP("en0")
+		if internalip == "" {
+			internalip = "127.0.0.1"
+		}
 	}
 
 	registration := new(consulapi.AgentServiceRegistration)
