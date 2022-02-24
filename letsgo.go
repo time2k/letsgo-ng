@@ -225,21 +225,31 @@ func (L *Letsgo) InitMicroserviceClient(client MicroserviceClienter) {
 
 //Close 关闭Letsgo框架
 func (L *Letsgo) Close() {
-	for _, v := range L.DBC {
-		v.Master.Close()
-		//判断是否是主从集群
-		if v.Slave != nil {
-			v.Slave.Close()
+	if L.DBC != nil {
+		for _, v := range L.DBC {
+			v.Master.Close()
+			//判断是否是主从集群
+			if v.Slave != nil {
+				v.Slave.Close()
+			}
 		}
 	}
 
-	L.LoggerFile.Close()
+	if L.Logger != nil {
+		L.LoggerFile.Close()
+	}
 
-	L.Cache.Redisc.Redisc.Close()
+	if L.Cache.Redisc != nil {
+		L.Cache.Redisc.Redisc.Close()
+	}
 
-	L.ContextSet.CancelAll()
+	if L.ContextSet != nil {
+		L.ContextSet.CancelAll()
+	}
 
-	L.MicroserviceClient.DeregisterAllService()
+	if L.MicroserviceClient != nil {
+		L.MicroserviceClient.DeregisterAllService()
+	}
 }
 
 //Default 框架自持变量
