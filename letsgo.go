@@ -238,6 +238,8 @@ func (L *Letsgo) Close() {
 	L.Cache.Redisc.Redisc.Close()
 
 	L.ContextSet.CancelAll()
+
+	L.MicroServiceClient.DeregisterAllService()
 }
 
 //Default 框架自持变量

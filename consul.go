@@ -5,14 +5,17 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 
 	consulapi "github.com/hashicorp/consul/api"
 )
 
 //ConsulClient 结构体
 type ConsulClient struct {
-	Client   *consulapi.Client
-	IsActive bool
+	Client    *consulapi.Client
+	IsActive  bool
+	ServiceID map[string]*consulapi.AgentServiceRegistration
+	Lock      sync.Mutex
 }
 
 //NewConsulClient 返回一个ConsulClient结构体指针
@@ -86,10 +89,14 @@ func (c *ConsulClient) RegisterService(service_name string, service_port int) {
 	err = c.Client.Agent().ServiceRegister(registration)
 	if err != nil {
 		log.Println("ConsulClient RegisterService register server error : ", err.Error())
+		return
 	}
+	c.Lock.Lock()
+	c.ServiceID[registration.ID] = registration
+	c.Lock.Unlock()
 }
 
-//反注册服务
+//删除服务
 func (c *ConsulClient) DeregisterService(service_name string) {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -98,7 +105,17 @@ func (c *ConsulClient) DeregisterService(service_name string) {
 
 	err = c.Client.Agent().ServiceDeregister(service_name + ":" + hostname)
 	if err != nil {
-		log.Println("ConsulClient DeregisterService deregister server error : ", err.Error())
+		log.Println("ConsulClient DeregisterService deregister service error : ", err.Error())
+	}
+}
+
+//删除所有服务
+func (c *ConsulClient) DeregisterAllService() {
+	for id, _ := range c.ServiceID {
+		err := c.Client.Agent().ServiceDeregister(id)
+		if err != nil {
+			log.Println("ConsulClient DeregisterAllService deregister service error : ", err.Error())
+		}
 	}
 }
 
