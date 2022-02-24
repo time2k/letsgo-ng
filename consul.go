@@ -14,7 +14,7 @@ import (
 type ConsulClient struct {
 	Client    *consulapi.Client
 	Active    bool
-	ServiceID map[string]*consulapi.AgentServiceRegistration
+	ServiceID []string
 	Lock      sync.Mutex
 }
 
@@ -33,7 +33,6 @@ func (c *ConsulClient) Init() {
 	}
 
 	c.Client = client
-	c.ServiceID = make(map[string]*consulapi.AgentServiceRegistration)
 	c.Active = true
 }
 
@@ -93,7 +92,7 @@ func (c *ConsulClient) RegisterService(service_name string, service_port int) {
 		return
 	}
 	c.Lock.Lock()
-	c.ServiceID[registration.ID] = registration
+	c.ServiceID = append(c.ServiceID, registration.ID)
 	c.Lock.Unlock()
 }
 
@@ -112,7 +111,8 @@ func (c *ConsulClient) DeregisterService(service_name string) {
 
 //删除所有服务
 func (c *ConsulClient) DeregisterAllService() {
-	for id, _ := range c.ServiceID {
+	for _, id := range c.ServiceID {
+		println(id)
 		err := c.Client.Agent().ServiceDeregister(id)
 		if err != nil {
 			log.Println("ConsulClient DeregisterAllService deregister service error : ", err.Error())
