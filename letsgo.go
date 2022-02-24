@@ -218,9 +218,9 @@ func (L *Letsgo) InitContextSet() {
 }
 
 //InitMicroServiceClient 初始化微服务框架客户端
-func (L *Letsgo) InitMicroServiceClient(client MicroServiceClienter) {
-	L.MicroServiceClient = client
-	L.MicroServiceClient.Init()
+func (L *Letsgo) InitMicroserviceClient(client MicroserviceClienter) {
+	L.MicroserviceClient = client
+	L.MicroserviceClient.Init()
 }
 
 //Close 关闭Letsgo框架
@@ -239,7 +239,7 @@ func (L *Letsgo) Close() {
 
 	L.ContextSet.CancelAll()
 
-	L.MicroServiceClient.DeregisterAllService()
+	L.MicroserviceClient.DeregisterAllService()
 }
 
 //Default 框架自持变量
