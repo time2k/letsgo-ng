@@ -20,9 +20,8 @@ func NewConsulClient() *ConsulClient {
 	return &ConsulClient{}
 }
 
-//Init JSONRPCClient初始化
+//Init ConsulClient
 func (c *ConsulClient) Init() {
-
 	config := consulapi.DefaultConfig()
 
 	client, err := consulapi.NewClient(config)

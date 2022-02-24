@@ -53,16 +53,16 @@ type DBC map[string]DBSet
 //Letsgo 框架依赖功能结构体
 type Letsgo struct {
 	DBC
-	Cache         *Cache
-	CacheLock     *CacheLock
-	DBQuery       *DBQuery
-	HTTPQuery     *HTTPQuery
-	JSONRPCClient *JSONRPCClient
-	Schedules     *Schedule
-	Logger        *log.Logger
-	LoggerFile    *os.File
-	ContextSet    contextSet
-	MicroService  *ConsulClient
+	Cache              *Cache
+	CacheLock          *CacheLock
+	DBQuery            *DBQuery
+	HTTPQuery          *HTTPQuery
+	JSONRPCClient      *JSONRPCClient
+	Schedules          *Schedule
+	Logger             *log.Logger
+	LoggerFile         *os.File
+	ContextSet         contextSet
+	MicroServiceClient MicroServiceClienter
 }
 
 //NewLetsgo 返回一个Letsgo类型的结构体指针
@@ -217,10 +217,10 @@ func (L *Letsgo) InitContextSet() {
 	L.ContextSet = newContextSet()
 }
 
-//InitMicroService 初始化微服务治理
-func (L *Letsgo) InitMicroService() {
-	//init Consul
-	L.MicroService = NewConsulClient()
+//InitMicroServiceClient 初始化微服务框架客户端
+func (L *Letsgo) InitMicroServiceClient(client MicroServiceClienter) {
+	L.MicroServiceClient = client
+	L.MicroServiceClient.Init()
 }
 
 //Close 关闭Letsgo框架
