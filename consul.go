@@ -139,18 +139,18 @@ func (c *ConsulClient) DeregisterAllService() error {
 	return nil
 }
 
-//发现服务 返回ip:port字符串
+//发现服务 返回ip:port字符串 建议还是使用dns方式
 func (c *ConsulClient) ServiceDiscovery(service_name string) (string, error) {
-	services, err := c.Client.Agent().Services()
+	services, _, err := c.Client.Health().Service(service_name, "", true, nil)
 	if err != nil {
-		log.Println("[error]ConsulClient ServiceFind get service error : ", err.Error())
+		log.Println("[error]ConsulClient ServiceDiscovery get service error : ", err.Error())
 		return "", err
 	}
-	if _, found := services[service_name]; !found {
-		log.Println("[error]ConsulClient ServiceFind service_name not found")
-		return "", err
-	}
-	return fmt.Sprint(services[service_name].Address, ":", services[service_name].Port), nil
+
+	//随机使用一个service
+	index := RandNum(len(services))
+
+	return fmt.Sprint(services[index].Service.Address, ":", services[index].Service.Port), nil
 }
 
 //微服务客户端是否活跃

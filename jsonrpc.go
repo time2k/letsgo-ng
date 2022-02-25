@@ -47,17 +47,18 @@ func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
 	}
 
 	addr := "" //ip:port
-	//如果配置了微服务，优先使用服务发现
-	if Default.MicroserviceClient != nil && Default.MicroserviceClient.IsActive() {
+
+	if thisservice.Address != "" {
+		addr = thisservice.Address
+	} else if Default.MicroserviceClient != nil && Default.MicroserviceClient.IsActive() { //不填写传统地址才使用服务发现
 		var err error
 		addr, err = Default.MicroserviceClient.ServiceDiscovery(thisservice.MicroserviceName)
 		if err != nil {
-			return nil, fmt.Errorf("[error]jsonrpc ServiceDiscovery error:", err.Error())
+			return nil, fmt.Errorf("[error]jsonrpc ServiceDiscovery error: %s", err.Error())
 		}
 		log.Println("dial use microservice discovery, addr:", addr)
 	} else {
-		addr = thisservice.Address
-		log.Println("dial use config address, addr:", addr)
+		return nil, fmt.Errorf("[error]jsonrpc addr empty")
 	}
 
 	client, err := jsonrpc.Dial(thisservice.Network, addr)
