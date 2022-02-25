@@ -15,6 +15,7 @@ type ConsulClient struct {
 	Client    *consulapi.Client
 	Active    bool
 	ServiceID []string
+	DExit     bool
 	Lock      sync.Mutex
 }
 
@@ -139,7 +140,7 @@ func (c *ConsulClient) DeregisterAllService() error {
 }
 
 //发现服务 返回ip:port字符串
-func (c *ConsulClient) ServiceFind(service_name string) (string, error) {
+func (c *ConsulClient) ServiceDiscovery(service_name string) (string, error) {
 	services, err := c.Client.Agent().Services()
 	if err != nil {
 		log.Println("[error]ConsulClient ServiceFind get service error : ", err.Error())
@@ -155,4 +156,15 @@ func (c *ConsulClient) ServiceFind(service_name string) (string, error) {
 //微服务客户端是否活跃
 func (c *ConsulClient) IsActive() bool {
 	return c.Active
+}
+
+//设置微服务是否server退出前删除
+func (c *ConsulClient) DeregisterBeforeExit(todo bool) bool {
+	c.DExit = todo
+	return todo
+}
+
+//微服务是否server退出前删除
+func (c *ConsulClient) IsDeregisterBeforeExit() bool {
+	return c.DExit
 }

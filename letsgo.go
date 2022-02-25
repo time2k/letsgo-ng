@@ -247,7 +247,7 @@ func (L *Letsgo) Close() {
 		L.ContextSet.CancelAll()
 	}
 
-	if L.MicroserviceClient != nil {
+	if L.MicroserviceClient != nil && L.MicroserviceClient.IsDeregisterBeforeExit() {
 		L.MicroserviceClient.DeregisterAllService()
 	}
 }

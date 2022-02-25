@@ -2,6 +2,7 @@ package letsgo
 
 import (
 	"fmt"
+	"log"
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"sync"
@@ -41,11 +42,25 @@ func (c *JSONRPCClient) Set(service, network, address, microservice_name string)
 //Dial 连接到一个rpc服务器
 func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
 	thisservice, ok := c.Service[service]
-	if ok != true {
+	if !ok {
 		return nil, fmt.Errorf("[error]jsonrpc Call unknown service: %s", service)
 	}
 
-	client, err := jsonrpc.Dial(thisservice.Network, thisservice.Address)
+	addr := "" //ip:port
+	//如果配置了微服务，优先使用服务发现
+	if Default.MicroserviceClient != nil && Default.MicroserviceClient.IsActive() {
+		var err error
+		addr, err = Default.MicroserviceClient.ServiceDiscovery(thisservice.MicroserviceName)
+		if err != nil {
+			return nil, fmt.Errorf("[error]jsonrpc ServiceDiscovery error:", err.Error())
+		}
+		log.Println("dial use microservice discovery, addr:", addr)
+	} else {
+		addr = thisservice.Address
+		log.Println("dial use config address, addr:", addr)
+	}
+
+	client, err := jsonrpc.Dial(thisservice.Network, addr)
 	if err != nil {
 		return nil, fmt.Errorf("[error]jsonrpc dial: %s", err.Error())
 	}
@@ -54,19 +69,23 @@ func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
 }
 
 //DialWithMicroserviceFind 使用微服务发现并连接到rpc服务器
-func (c *JSONRPCClient) DialWithMicroserviceFind(service string) (*rpc.Client, error) {
+func (c *JSONRPCClient) DialWithServiceDiscovery(service string) (*rpc.Client, error) {
 	thisservice, ok := c.Service[service]
-	if ok != true {
+	if !ok {
 		return nil, fmt.Errorf("[error]jsonrpc Call unknown service: %s", service)
 	}
 
-	if Default.MicroserviceClient.IsActive() == false {
+	if Default.MicroserviceClient == nil {
+		return nil, fmt.Errorf("[error]jsonrpc need init MicroserviceClient")
+	}
+
+	if !Default.MicroserviceClient.IsActive() {
 		return nil, fmt.Errorf("[error]jsonrpc need active MicroserviceClient")
 	}
 
-	addr, err := Default.MicroserviceClient.ServiceFind(thisservice.MicroserviceName)
+	addr, err := Default.MicroserviceClient.ServiceDiscovery(thisservice.MicroserviceName)
 	if err != nil {
-		return nil, fmt.Errorf("[error]jsonrpc ServiceFind error:", err.Error())
+		return nil, fmt.Errorf("[error]jsonrpc ServiceDiscovery error:", err.Error())
 	}
 
 	client, err := jsonrpc.Dial(thisservice.Network, addr)
