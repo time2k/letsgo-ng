@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/time2k/letsgo-ng/config"
 
 	"github.com/afex/hystrix-go/hystrix"
 	_ "github.com/go-sql-driver/mysql" //mysql
-	"github.com/gomodule/redigo/redis"
 	"github.com/labstack/echo"
 )
 
@@ -144,13 +144,16 @@ func (L *Letsgo) InitMemcached(MemcachedHost []string, MemcachedMaxIdleConns int
 	L.Cache.Init()
 }
 
-//InitRedis 初始化redis
-func (L *Letsgo) InitRedis(RedisClusterServer []string, RedisDialOption []redis.DialOption) {
+//InitRedis 初始化redis, RedisType 1-standalone 2-redis cluster
+func (L *Letsgo) InitRedis(RedisType int, RedisServers []string, RedisDialOption []redis.DialOption) {
 	//init cache
 	L.Cache = newCache()
-	//redis
-	L.Cache.Redisc = newLredisc()
-	err := L.Cache.Redisc.Init(RedisClusterServer, RedisDialOption)
+	if RedisType == 1 {
+		L.Cache.Redis = newLredis()
+	} else {
+		L.Cache.Redis = newLredisc()
+	}
+	err := L.Cache.Redis.Init(RedisServers, RedisDialOption)
 	if err != nil {
 		log.Panicf("[error]RedisCluster: %s", err.Error())
 	}
@@ -162,7 +165,7 @@ func (L *Letsgo) InitRedis(RedisClusterServer []string, RedisDialOption []redis.
 func (L *Letsgo) InitHTTPQuery(HTTPLog string) {
 	//init HTTPQuery
 	L.HTTPQuery = newHTTPQuery()
-	if L.Cache.UseRediscOrMemcached == 0 {
+	if L.Cache.UseRedisOrMemcached == 0 {
 		log.Panicf("[error]HTTP use cache but cache doesn't init")
 	}
 	L.HTTPQuery.SetCache(L.Cache)
@@ -205,7 +208,7 @@ func (L *Letsgo) InitMemConfig() {
 func (L *Letsgo) InitCacheLock() {
 	//init CacheLock
 	L.CacheLock = newCacheLock()
-	if L.Cache.UseRediscOrMemcached == 0 {
+	if L.Cache.UseRedisOrMemcached == 0 {
 		log.Panicf("[error]CacheLock use cache but cache doesn't init")
 	}
 	L.CacheLock.Cache = L.Cache
@@ -239,8 +242,8 @@ func (L *Letsgo) Close() {
 		L.LoggerFile.Close()
 	}
 
-	if L.Cache != nil && L.Cache.Redisc != nil {
-		L.Cache.Redisc.Redisc.Close()
+	if L.Cache != nil && L.Cache.Redis != nil {
+		L.Cache.Redis.Close()
 	}
 
 	if L.ContextSet != nil {

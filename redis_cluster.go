@@ -5,8 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/time2k/letsgo-ng/config"
-
 	"github.com/gomodule/redigo/redis" //redigo
 	"github.com/mna/redisc"            //redis cluster base on redigo
 )
@@ -26,7 +24,7 @@ func (c *Lredisc) Init(serverlist []string, options []redis.DialOption) error {
 	c.Redisc = &redisc.Cluster{
 		StartupNodes: serverlist,
 		DialOptions:  options,
-		CreatePool:   createPool,
+		CreatePool:   RedisCreatePool,
 	}
 
 	if err := c.Redisc.Refresh(); err != nil {
@@ -59,19 +57,6 @@ func (c *Lredisc) DoOnce(commandName string, args ...interface{}) (reply interfa
 	return redisconn.Do(commandName, args...)
 }
 
-func createPool(addr string, opts ...redis.DialOption) (*redis.Pool, error) {
-	return &redis.Pool{
-		MaxIdle:         config.REDIS_POOL_MAXIDLE,
-		MaxActive:       config.REDIS_POOL_MAXACTIVE,
-		IdleTimeout:     config.REDIS_POOL_IDLETIMEOUT,
-		MaxConnLifetime: config.REDIS_POOL_MAXCONNLIFETIME,
-		Wait:            config.REDIS_POLL_ALLOW_WAIT,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", addr, opts...)
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}, nil
+func (c *Lredisc) Close() error {
+	return c.Redisc.Close()
 }

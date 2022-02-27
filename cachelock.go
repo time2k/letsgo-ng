@@ -20,7 +20,7 @@ func newCacheLock() *CacheLock {
 //Lock 上锁
 func (c *CacheLock) Lock(lockid int, prefix string, OWNER string) {
 	//必须使用redis
-	if c.Cache.UseRediscOrMemcached == 1 {
+	if c.Cache.UseRedisOrMemcached == 1 {
 		log.Println("CacheLock must use redis!")
 		return
 	}
@@ -42,7 +42,7 @@ func (c *CacheLock) Lock(lockid int, prefix string, OWNER string) {
 //Unlock 解锁
 func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
 	//必须使用redis
-	if c.Cache.UseRediscOrMemcached == 1 {
+	if c.Cache.UseRedisOrMemcached == 1 {
 		log.Println("CacheLock must use redis!")
 		return
 	}

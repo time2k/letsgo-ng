@@ -10,9 +10,9 @@ import (
 
 //Cache 结构体
 type Cache struct {
-	Memcached            *Lmemcache
-	Redisc               *Lredisc
-	UseRediscOrMemcached int //使用redisc或者memcached 1-memcached 2-redisc
+	Memcached           *Lmemcache
+	Redis               Lrediser
+	UseRedisOrMemcached int //使用哪种缓存 1-memcached 2-redis
 }
 
 //newCache 返回一个Cache结构体指针
@@ -23,21 +23,11 @@ func newCache() *Cache {
 //Init 初始化
 func (c *Cache) Init() {
 	if c.Memcached != nil {
-		c.UseRediscOrMemcached = 1
+		c.UseRedisOrMemcached = 1
 	}
-	if c.Redisc != nil {
-		c.UseRediscOrMemcached = 2
+	if c.Redis != nil {
+		c.UseRedisOrMemcached = 2
 	}
-}
-
-//SetMC 设置memcache连接
-func (c *Cache) SetMC(mc *Lmemcache) {
-	c.Memcached = mc
-}
-
-//SetRedis 设置memcache连接
-func (c *Cache) SetRedis(redisc *Lredisc) {
-	c.Redisc = redisc
 }
 
 //Get 获得缓存
@@ -45,14 +35,14 @@ func (c *Cache) Get(cachekey string, DataStruct interface{}) (bool, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	CacheGet := false
 	var err error
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		CacheGet, err = c.Memcached.Get(cachekey, DataStruct)
 		if err != nil {
 			return false, fmt.Errorf("[error]Cache Memcached get cache: %s", err.Error())
 		}
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		isexist, err := redis.Int(conn.Do("EXISTS", cachekey))
@@ -86,14 +76,14 @@ func (c *Cache) Get(cachekey string, DataStruct interface{}) (bool, error) {
 //Set 设置缓存
 func (c *Cache) Set(cachekey string, DataStruct interface{}, expire int32) error {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		err := c.Memcached.Set(cachekey, DataStruct, expire)
 		if err != nil {
 			return fmt.Errorf("[error]Cache Memcached set cache: %s", err.Error())
 		}
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		str, err := json.MarshalToString(DataStruct)
@@ -111,14 +101,14 @@ func (c *Cache) Set(cachekey string, DataStruct interface{}, expire int32) error
 
 //Delete 删除缓存
 func (c *Cache) Delete(cachekey string) error {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		err := c.Memcached.Delete(cachekey)
 		if err != nil {
 			return fmt.Errorf("[error]Cache Memcached delete cache: %s", err.Error())
 		}
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		_, err2 := conn.Do("DEL", cachekey)
@@ -134,11 +124,11 @@ func (c *Cache) Delete(cachekey string) error {
 func (c *Cache) SetNX(cachekey string, DataStruct interface{}, expire int32) (int, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return 1, nil
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		str, err := json.MarshalToString(DataStruct)
@@ -164,11 +154,11 @@ func (c *Cache) SetNX(cachekey string, DataStruct interface{}, expire int32) (in
 func (c *Cache) BRPOP(cachekey string, DataStruct interface{}, timeout int32) (bool, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return false, nil
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		s, err := redis.ByteSlices(conn.Do("BRPOP", cachekey, timeout))
@@ -193,11 +183,11 @@ func (c *Cache) BRPOP(cachekey string, DataStruct interface{}, timeout int32) (b
 func (c *Cache) LPUSH(cachekey string, DataStruct interface{}) (int, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return 0, nil
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		str, err := json.MarshalToString(DataStruct)
@@ -217,11 +207,11 @@ func (c *Cache) LPUSH(cachekey string, DataStruct interface{}) (int, error) {
 
 //DO only for redis
 func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return nil, fmt.Errorf("Memcached Don't support DO")
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		return conn.Do(CMD, Params...)
@@ -231,11 +221,11 @@ func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 
 //PUB only for redis
 func (c *Cache) PUB(channelname string, content string) error {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return fmt.Errorf("Memcached Don't support PUB")
 	case 2:
-		conn := c.Redisc.GetConn(true)
+		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
 		if _, err := conn.Do("PUBLISH", channelname, content); err != nil {
@@ -247,11 +237,11 @@ func (c *Cache) PUB(channelname string, content string) error {
 
 //GetSubConn only for redis
 func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return nil, fmt.Errorf("Memcached Don't support GETSUBCONN")
 	case 2:
-		conn := c.Redisc.GetConn(false) //can't use redisc retry_conn
+		conn := c.Redis.GetConn(false) //can't use redisc retry_conn
 		//defer conn.Close()
 		psc := redis.PubSubConn{Conn: conn}
 
@@ -265,7 +255,7 @@ func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 
 //SUB only for redis and use conn default timeout，you should use in "for" loop statment for sub
 func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return "", fmt.Errorf("Memcached Don't support SUB")
 	case 2:
@@ -283,7 +273,7 @@ func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 
 //SUB only for redis and use timeout param，you should use in "for" loop statment for sub
 func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string, error) {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return "", fmt.Errorf("Memcached Don't support SUB")
 	case 2:
@@ -301,11 +291,11 @@ func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string
 
 //Show 显示设置
 func (c *Cache) Show() string {
-	switch c.UseRediscOrMemcached {
+	switch c.UseRedisOrMemcached {
 	case 1:
 		return "Cache use Memcached"
 	case 2:
-		return "Cache use Redisc"
+		return "Cache use Redis"
 	}
 	return ""
 }
