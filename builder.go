@@ -161,6 +161,9 @@ func (dbm *DBQueryBuilder) GetCacheKey() string {
 //SetCacheKey 设置缓存的key
 func (dbm *DBQueryBuilder) SetCacheKey(CacheKey string) {
 	dbm.CacheKey = CacheKey
+	if !dbm.UseCache {
+		dbm.UseCache = true
+	}
 }
 
 //GetCacheExpire 得到缓存超时信息
@@ -171,6 +174,9 @@ func (dbm *DBQueryBuilder) GetCacheExpire() int32 {
 //SetCacheExpire 设置缓存超时信息
 func (dbm *DBQueryBuilder) SetCacheExpire(ExpireTime int32) {
 	dbm.CacheExpireTime = ExpireTime
+	if !dbm.UseCache {
+		dbm.UseCache = true
+	}
 }
 
 //GetBuilder 得到Builder信息
