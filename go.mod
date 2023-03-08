@@ -30,7 +30,6 @@ require (
 	github.com/mna/redisc v1.1.7
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190710185942-9d28bd7c0945 // indirect
-	golang.org/x/sys v0.0.0-20220224003255-dbe011f71a99 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	google.golang.org/appengine v1.1.0 // indirect
 )
