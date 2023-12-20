@@ -9,7 +9,7 @@ import (
 )
 
 //HandlerFunc 定义lestgo handler func
-type HandlerFunc func(ltg CommonParams) error
+type HandlerFunc func(commp *CommonParams) error
 
 //Handler letsgo框架加载handler
 func Handler(myfunc HandlerFunc) echo.HandlerFunc {
@@ -23,7 +23,7 @@ func Handler(myfunc HandlerFunc) echo.HandlerFunc {
 }
 
 //GenCommparams 通用参数处理
-func GenCommparams(c echo.Context) CommonParams {
+func GenCommparams(c echo.Context) *CommonParams {
 	commp := CommonParams{}
 	commp.Init()
 
@@ -46,5 +46,5 @@ func GenCommparams(c echo.Context) CommonParams {
 		commp.SetParam("debug", params[6])
 	}
 
-	return commp
+	return &commp
 }
