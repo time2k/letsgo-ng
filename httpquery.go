@@ -109,7 +109,6 @@ func (c *HTTPQuery) GenUniqID() string {
 func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan HTTPResponseResult) error {
 	//如果http请求响应日志有定义
 	httpLog := new(log.Logger)
-	httpinfo := ""
 	if c.Logfile != "" {
 		//定义一个文件
 		logFile, err := os.OpenFile(c.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)

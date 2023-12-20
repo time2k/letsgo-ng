@@ -24,7 +24,7 @@ type BaseReturnData struct {
 	Status int
 	Msg    string
 	Body   interface{}
-	Debug  *DebugInfo
+	CommonParams
 }
 
 //CommonRespNew 通用返回
@@ -32,12 +32,7 @@ type CommonRespNew struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
-}
-
-//CommonRespWithDebugNew 带有debug信息的返回
-type CommonRespWithDebugNew struct {
-	CommonRespNew
-	Debug []string `json:"debug"`
+	Debug   []string    `json:"debug,omitempty"`
 }
 
 //FormatNew 格式化方法
@@ -48,17 +43,8 @@ func (BD *BaseReturnData) FormatNew() interface{} {
 	ret.Code = BD.Status
 	ret.Message = BD.Msg
 	ret.Data = BD.Body
-	if len(BD.Debug.Info) != 0 {
-		ret_debug := CommonRespWithDebugNew{}
-		ret_debug.CommonRespNew = ret
-
-		for _, ec := range BD.Debug.Info {
-			//for _, ec2 := range ec.Info {
-			ret_debug.Debug = append(ret_debug.Debug, ec)
-			ret_debug.Debug = append(ret_debug.Debug, "----")
-			//}
-		}
-		return ret_debug
+	if BD.CommonParams.GetParam("debug") != "" && len(BD.CommonParams.Debug.Info) != 0 {
+		ret.Debug = BD.CommonParams.Debug.Info
 	}
 
 	return ret
