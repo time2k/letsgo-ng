@@ -225,7 +225,7 @@ func (dbm *DBQueryBuilder) GetDebugInfo() *DebugInfo {
 //FuncDesc 方法描述结构体
 type FuncDesc struct {
 	ModelFunc
-	CommP CommonParams
+	CommP *CommonParams
 	Args  []interface{}
 }
 
@@ -242,7 +242,7 @@ func (schedulem *ScheduleBuilder) GetBuilder() *ScheduleBuilder {
 }
 
 //SetSchedule 设置调度器信息
-func (schedulem *ScheduleBuilder) SetSchedule(commp CommonParams, funcx ModelFunc, args ...interface{}) {
+func (schedulem *ScheduleBuilder) SetSchedule(commp *CommonParams, funcx ModelFunc, args ...interface{}) {
 	schedulem.FuncDescs = append(schedulem.FuncDescs, FuncDesc{ModelFunc: funcx, CommP: commp, Args: args})
 }
 
