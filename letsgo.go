@@ -19,11 +19,13 @@ type CommonParams struct {
 	//Letsgo      *Letsgo
 	HTTPContext echo.Context
 	Params      map[string]string
+	Debug       *DebugInfo
 }
 
 //Init 初始化
 func (commp *CommonParams) Init() {
 	commp.Params = make(map[string]string)
+	commp.Debug = NewDebugInfo()
 }
 
 //SetParam 插入参数
@@ -40,15 +42,6 @@ func (commp *CommonParams) GetParam(name string) string {
 	}
 	return v
 }
-
-//DBSet 支持1主1从的DBset
-type DBSet struct {
-	Master *sql.DB
-	Slave  *sql.DB
-}
-
-//DBC DBSet集合
-type DBC map[string]DBSet
 
 //Letsgo 框架依赖功能结构体
 type Letsgo struct {

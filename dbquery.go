@@ -22,6 +22,15 @@ type DBQueryer interface {
 	GetDbname() string
 }
 
+//DBSet 支持1主1从的DBset
+type DBSet struct {
+	Master *sql.DB
+	Slave  *sql.DB
+}
+
+//DBC DBSet集合
+type DBC map[string]DBSet
+
 //DBQuery 结构体
 type DBQuery struct {
 	DBset          DBC

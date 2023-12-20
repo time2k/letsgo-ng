@@ -79,6 +79,7 @@ func (c *Schedule) Run(ser Scheduler) ([]BaseReturnData, error) {
 
 //ScheduleWorker 调度器工人
 func (c *Schedule) ScheduleWorker(sch *ScheduleBuilder, debug *DebugInfo, index int, seqid string) {
+	defer PanicFunc()
 	start := time.Now()
 	//运行函数
 	ret := sch.FuncDescs[index].ModelFunc(sch.FuncDescs[index].CommP, sch.FuncDescs[index].Args...)

@@ -215,7 +215,7 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 		if err != nil {
 			fmt.Println(err)
 		}
-		httpinfo = "\n---Request---\n" + string(requestDump)
+		httpLog.Println("\n---Request---\n" + string(requestDump))
 	}
 
 	//解析url，获得请求的域名和参数
@@ -257,7 +257,7 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 			if err != nil {
 				fmt.Println(err)
 			}
-			httpLog.Println(httpinfo + "\n---Response---\n" + string(responseDump))
+			httpLog.Println("\n---Response---\n" + string(responseDump))
 		}
 
 		//打印出header

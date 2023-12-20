@@ -21,11 +21,10 @@ type CommonRespWithDebug struct {
 
 //BaseReturnData letsgo model 默认数据返回封装，你可以根据这个重新在此文件定义自定义封装
 type BaseReturnData struct {
-	Status    int
-	Msg       string
-	Body      interface{}
-	IsDebug   string
-	DebugInfo []DebugInfo
+	Status int
+	Msg    string
+	Body   interface{}
+	Debug  *DebugInfo
 }
 
 //CommonRespNew 通用返回
@@ -38,7 +37,7 @@ type CommonRespNew struct {
 //CommonRespWithDebugNew 带有debug信息的返回
 type CommonRespWithDebugNew struct {
 	CommonRespNew
-	DebugInfo
+	Debug []string `json:"debug"`
 }
 
 //FormatNew 格式化方法
@@ -49,15 +48,15 @@ func (BD *BaseReturnData) FormatNew() interface{} {
 	ret.Code = BD.Status
 	ret.Message = BD.Msg
 	ret.Data = BD.Body
-	if BD.IsDebug == "1" {
+	if len(BD.Debug.Info) != 0 {
 		ret_debug := CommonRespWithDebugNew{}
 		ret_debug.CommonRespNew = ret
 
-		for _, ec := range BD.DebugInfo {
-			for _, ec2 := range ec.Info {
-				ret_debug.DebugInfo.Add(ec2)
-				ret_debug.DebugInfo.Add("----")
-			}
+		for _, ec := range BD.Debug.Info {
+			//for _, ec2 := range ec.Info {
+			ret_debug.Debug = append(ret_debug.Debug, ec)
+			ret_debug.Debug = append(ret_debug.Debug, "----")
+			//}
 		}
 		return ret_debug
 	}
