@@ -21,10 +21,10 @@ func NewDebugInfo() *DebugInfo {
 }
 
 //Add 向debug中添加信息
-func (D *DebugInfo) Add(info string) {
+func (D *DebugInfo) Add(info ...string) {
 	D.lock.Lock()
 	defer D.lock.Unlock()
-	D.Info = append(D.Info, info)
+	D.Info = append(D.Info, info...)
 }
 
 /*
