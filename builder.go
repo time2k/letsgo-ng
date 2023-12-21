@@ -14,18 +14,18 @@ import (
 )
 
 //NewHTTPQueryBuilder 实例化
-func NewHTTPQueryBuilder() *HTTPQueryBuilder {
-	return &HTTPQueryBuilder{}
+func NewHTTPQueryBuilder(commp *CommonParams) *HTTPQueryBuilder {
+	return &HTTPQueryBuilder{CommonParams: commp}
 }
 
 //NewDBQueryBuilder 实例化
-func NewDBQueryBuilder() *DBQueryBuilder {
-	return &DBQueryBuilder{}
+func NewDBQueryBuilder(commp *CommonParams) *DBQueryBuilder {
+	return &DBQueryBuilder{CommonParams: commp}
 }
 
 //NewScheduleBuilder 实例化
-func NewScheduleBuilder() *ScheduleBuilder {
-	return &ScheduleBuilder{}
+func NewScheduleBuilder(commp *CommonParams) *ScheduleBuilder {
+	return &ScheduleBuilder{CommonParams: commp}
 }
 
 /*
@@ -59,7 +59,7 @@ type HTTPQueryBuilder struct {
 	Requests        []HTTPRequest
 	ResponseCH      chan HTTPResponseResult
 	CacheExpireTime int32
-	DebugInfo
+	*CommonParams
 }
 
 //GetBuilder 得到Builder信息
@@ -125,7 +125,7 @@ func (httpm *HTTPQueryBuilder) InitHTTP() {
 
 //GetDebugInfo 得到debug信息
 func (httpm *HTTPQueryBuilder) GetDebugInfo() *DebugInfo {
-	return &httpm.DebugInfo
+	return httpm.CommonParams.Debug
 }
 
 /*
@@ -145,7 +145,7 @@ type DBQueryBuilder struct {
 	SQLcondition    []interface{}
 	Result          interface{}
 	DBName          string
-	DebugInfo
+	*CommonParams
 }
 
 //IsUseCache 是否使用缓存
@@ -211,7 +211,7 @@ func (dbm *DBQueryBuilder) SetResult(data interface{}) {
 
 //GetDebugInfo 得到debug信息
 func (dbm *DBQueryBuilder) GetDebugInfo() *DebugInfo {
-	return &dbm.DebugInfo
+	return dbm.CommonParams.Debug
 }
 
 /*
@@ -233,7 +233,7 @@ type FuncDesc struct {
 type ScheduleBuilder struct {
 	FuncDescs []FuncDesc
 	DataCH    chan ScheduleChan
-	DebugInfo
+	*CommonParams
 }
 
 //GetBuilder 得到Builder信息
@@ -242,13 +242,13 @@ func (schedulem *ScheduleBuilder) GetBuilder() *ScheduleBuilder {
 }
 
 //SetSchedule 设置调度器信息
-func (schedulem *ScheduleBuilder) SetSchedule(commp *CommonParams, funcx ModelFunc, args ...interface{}) {
-	schedulem.FuncDescs = append(schedulem.FuncDescs, FuncDesc{ModelFunc: funcx, CommP: commp, Args: args})
+func (schedulem *ScheduleBuilder) SetSchedule(funcx ModelFunc, args ...interface{}) {
+	schedulem.FuncDescs = append(schedulem.FuncDescs, FuncDesc{ModelFunc: funcx, CommP: schedulem.CommonParams, Args: args})
 }
 
 //GetDebugInfo 得到debug信息
 func (schedulem *ScheduleBuilder) GetDebugInfo() *DebugInfo {
-	return &schedulem.DebugInfo
+	return schedulem.CommonParams.Debug
 }
 
 //ScheduleChan 结构体
