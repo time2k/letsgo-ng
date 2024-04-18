@@ -12,7 +12,7 @@ import (
 	_ "github.com/go-sql-driver/mysql" //mysql
 )
 
-//DBQueryer 接口描述
+// DBQueryer 接口描述
 type DBQueryer interface {
 	IsUseCache() bool
 	GetCacheKey() string
@@ -22,16 +22,16 @@ type DBQueryer interface {
 	GetDbname() string
 }
 
-//DBSet 支持1主1从的DBset
+// DBSet 支持1主1从的DBset
 type DBSet struct {
 	Master *sql.DB
 	Slave  *sql.DB
 }
 
-//DBC DBSet集合
+// DBC DBSet集合
 type DBC map[string]DBSet
 
-//DBQuery 结构体
+// DBQuery 结构体
 type DBQuery struct {
 	DBset          DBC
 	Cache          *Cache
@@ -41,36 +41,36 @@ type DBQuery struct {
 	RWflagLock     sync.Mutex
 }
 
-//newDBQuery 返回一个DBQuery结构体指针
+// newDBQuery 返回一个DBQuery结构体指针
 func newDBQuery() *DBQuery {
 	return &DBQuery{}
 }
 
-//SetDBset 设置db连接集
+// SetDBset 设置db连接集
 func (c *DBQuery) SetDBset(dbset DBC) {
 	c.DBset = dbset
 }
 
-//SetCache 设置cache
+// SetCache 设置cache
 func (c *DBQuery) SetCache(cache *Cache) {
 	c.Cache = cache
 }
 
-//AddCounter 内置计数器++
+// AddCounter 内置计数器++
 func (c *DBQuery) AddCounter() {
 	c.SQLcounterLock.Lock()
 	defer c.SQLcounterLock.Unlock()
 	c.SQLcounter++
 }
 
-//SubCounter 内置计数器--
+// SubCounter 内置计数器--
 func (c *DBQuery) SubCounter() {
 	c.SQLcounterLock.Lock()
 	defer c.SQLcounterLock.Unlock()
 	c.SQLcounter--
 }
 
-//SelectOne 单条查询方法
+// SelectOne 单条查询方法
 func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	c.AddCounter()
 	defer c.SubCounter()
@@ -112,7 +112,7 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	}
 	rows, err := dbconn.Query(SQL, SQLcondition...)
 	if err != nil {
-		return false, fmt.Errorf("[error]CacheQuery DB query action: %s", err.Error())
+		return false, fmt.Errorf("[error]CacheQuery DB query action: %w", err)
 	}
 	defer rows.Close()
 
@@ -121,7 +121,7 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	if rows.Next() {
 		err := rows.Err()
 		if err != nil {
-			return false, fmt.Errorf("[error]CacheQuery DB rows.next action: %s", err.Error())
+			return false, fmt.Errorf("[error]CacheQuery DB rows.next action: %w", err)
 		}
 		if rtype.Kind() == reflect.Struct {
 			//s := reflect.Indirect(rve)
@@ -132,12 +132,12 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 			}
 			err = rows.Scan(scanp...)
 			if err != nil {
-				return false, fmt.Errorf("[error]CacheQuery DB scan action: %s", err.Error())
+				return false, fmt.Errorf("[error]CacheQuery DB scan action: %w", err)
 			}
 		} else {
 			err = rows.Scan(rvalue.Addr().Interface())
 			if err != nil {
-				return false, fmt.Errorf("[error]CacheQuery DB scan action: %s", err.Error())
+				return false, fmt.Errorf("[error]CacheQuery DB scan action: %w", err)
 			}
 		}
 		if UseCache == true { //do use cache
@@ -154,7 +154,7 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	return true, nil
 }
 
-//SelectMulti 多条查询方法
+// SelectMulti 多条查询方法
 func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	c.AddCounter()
 	defer c.SubCounter()
@@ -197,7 +197,7 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	rows, err := dbconn.Query(SQL, SQLcondition...)
 
 	if err != nil {
-		return false, fmt.Errorf("[CacheQuery]DB query action: %s", err.Error())
+		return false, fmt.Errorf("[CacheQuery]DB query action: %w", err)
 	}
 	defer rows.Close()
 
@@ -208,7 +208,7 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	for rows.Next() {
 		err := rows.Err()
 		if err != nil {
-			return false, fmt.Errorf("[CacheQuery]DB rows.next action: %s", err.Error())
+			return false, fmt.Errorf("[CacheQuery]DB rows.next action: %w", err)
 		}
 
 		dp := reflect.New(rtype)
@@ -222,12 +222,12 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 			}
 			err := rows.Scan(scanp...)
 			if err != nil {
-				return false, fmt.Errorf("[CacheQuery]DB scan action: %s", err.Error())
+				return false, fmt.Errorf("[CacheQuery]DB scan action: %w", err)
 			}
 		} else {
 			err := rows.Scan(dx.Addr().Interface())
 			if err != nil {
-				return false, fmt.Errorf("[CacheQuery]DB scan action: %s", err.Error())
+				return false, fmt.Errorf("[CacheQuery]DB scan action: %w", err)
 			}
 		}
 		//reflect type of append into interface{} of a pointer of slice
@@ -250,7 +250,7 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	return true, nil
 }
 
-//EXEC 数据执行类 insert update 等请用此函数
+// EXEC 数据执行类 insert update 等请用此函数
 func (c *DBQuery) EXEC(cqer DBQueryer) (int64, error) {
 	c.AddCounter()
 	defer c.SubCounter()
@@ -269,12 +269,12 @@ func (c *DBQuery) EXEC(cqer DBQueryer) (int64, error) {
 
 	stmt, err := c.DBset[DbName].Master.Prepare(SQL)
 	if err != nil {
-		return 0, fmt.Errorf("[error]CacheQuery stmt sql: %s", err.Error())
+		return 0, fmt.Errorf("[error]CacheQuery stmt sql: %w", err)
 	}
 	defer stmt.Close()
 	res, err2 := stmt.Exec(SQLcondition...)
 	if err2 != nil {
-		return 0, fmt.Errorf("[error]CacheQuery exe sql: %s", err2.Error())
+		return 0, fmt.Errorf("[error]CacheQuery exe sql: %w", err2)
 	}
 	if strings.Contains(SQL, "INSERT") || strings.Contains(SQL, "insert") {
 		id, err := res.LastInsertId()
@@ -295,12 +295,12 @@ func (c *DBQuery) EXEC(cqer DBQueryer) (int64, error) {
 	return 0, nil
 }
 
-//GetTX 事务类，返回一个tx连接
+// GetTX 事务类，返回一个tx连接
 func (c *DBQuery) GetTX(cqer DBQueryer) (*sql.Tx, error) {
 	return c.DBset[cqer.GetDbname()].Master.Begin()
 }
 
-//ReadMSBalancer 轮询使用master或者slave进行查询
+// ReadMSBalancer 轮询使用master或者slave进行查询
 func (c *DBQuery) ReadMSBalancer(DbName string) (*sql.DB, error) {
 	c.RWflagLock.Lock()
 	defer c.RWflagLock.Unlock()
@@ -320,7 +320,7 @@ func (c *DBQuery) ReadMSBalancer(DbName string) (*sql.DB, error) {
 	return c.DBset[DbName].Master, nil
 }
 
-//deepCopy 深拷贝方法
+// deepCopy 深拷贝方法
 func deepCopy(dst, src interface{}) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
