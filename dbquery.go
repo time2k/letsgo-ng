@@ -116,7 +116,7 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	}
 	defer rows.Close()
 
-	debug.Add(fmt.Sprintf("Get DB Query: %s , Query Condition: %s", SQL, SQLcondition))
+	debug.Add(fmt.Sprintf("Get DB Query: %s , Query Condition: %v", SQL, SQLcondition))
 
 	if rows.Next() {
 		err := rows.Err()
@@ -201,7 +201,7 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	}
 	defer rows.Close()
 
-	debug.Add(fmt.Sprintf("Get DB Query: %s , Query Condition: %s", SQL, SQLcondition))
+	debug.Add(fmt.Sprintf("Get DB Query: %s , Query Condition: %v", SQL, SQLcondition))
 
 	rowc := 0
 

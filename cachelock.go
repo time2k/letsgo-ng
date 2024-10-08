@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-//CacheLock 结构体
+// CacheLock 结构体
 type CacheLock struct {
 	Cache *Cache
 }
 
-//newCacheLock 返回一个CacheLock结构体指针
+// newCacheLock 返回一个CacheLock结构体指针
 func newCacheLock() *CacheLock {
 	return &CacheLock{}
 }
 
-//Lock 上锁
-func (c *CacheLock) Lock(lockid int, prefix string, OWNER string) {
+// Lock 上锁
+func (c *CacheLock) Lock(lockid int, prefix string, OWNER string, expiremilseconds int) {
 	//必须使用redis
 	if c.Cache.UseRedisOrMemcached == 1 {
 		log.Println("CacheLock must use redis!")
@@ -26,7 +26,12 @@ func (c *CacheLock) Lock(lockid int, prefix string, OWNER string) {
 	}
 	lockkey := "LOCK_" + prefix + "_" + strconv.Itoa(lockid)
 
-	var LOCK_TIMEOUT int32 = 10000 //msec
+	var LOCK_TIMEOUT int32 = 0
+	if expiremilseconds == 0 {
+		LOCK_TIMEOUT = 10000 //msec
+	} else {
+		LOCK_TIMEOUT = int32(expiremilseconds)
+	}
 	for {
 		lock, _ := c.Cache.SetNX(lockkey, OWNER, LOCK_TIMEOUT)
 		if lock == 1 {
@@ -39,7 +44,7 @@ func (c *CacheLock) Lock(lockid int, prefix string, OWNER string) {
 	}
 }
 
-//Unlock 解锁
+// Unlock 解锁
 func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
 	//必须使用redis
 	if c.Cache.UseRedisOrMemcached == 1 {
