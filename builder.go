@@ -13,17 +13,17 @@ import (
 	"github.com/time2k/letsgo-ng/config"
 )
 
-//NewHTTPQueryBuilder 实例化
+// NewHTTPQueryBuilder 实例化
 func NewHTTPQueryBuilder(commp *CommonParams) *HTTPQueryBuilder {
 	return &HTTPQueryBuilder{CommonParams: commp}
 }
 
-//NewDBQueryBuilder 实例化
+// NewDBQueryBuilder 实例化
 func NewDBQueryBuilder(commp *CommonParams) *DBQueryBuilder {
 	return &DBQueryBuilder{CommonParams: commp}
 }
 
-//NewScheduleBuilder 实例化
+// NewScheduleBuilder 实例化
 func NewScheduleBuilder(commp *CommonParams) *ScheduleBuilder {
 	return &ScheduleBuilder{CommonParams: commp}
 }
@@ -32,7 +32,7 @@ func NewScheduleBuilder(commp *CommonParams) *ScheduleBuilder {
 * http builder define
  */
 
-//HTTPRequest http请求结构体
+// HTTPRequest http请求结构体
 type HTTPRequest struct {
 	UniqID    string
 	NeedCache bool
@@ -43,7 +43,7 @@ type HTTPRequest struct {
 	Postdata  map[string]interface{}
 }
 
-//HTTPResponseResult http响应结构体
+// HTTPResponseResult http响应结构体
 type HTTPResponseResult struct {
 	UniqID         string
 	URL            string
@@ -54,7 +54,7 @@ type HTTPResponseResult struct {
 	Body           []byte
 }
 
-//HTTPQueryBuilder 包含请求和多个响应channel的结构体
+// HTTPQueryBuilder 包含请求和多个响应channel的结构体
 type HTTPQueryBuilder struct {
 	Requests        []HTTPRequest
 	ResponseCH      chan HTTPResponseResult
@@ -62,17 +62,17 @@ type HTTPQueryBuilder struct {
 	*CommonParams
 }
 
-//GetBuilder 得到Builder信息
+// GetBuilder 得到Builder信息
 func (httpm *HTTPQueryBuilder) GetBuilder() *HTTPQueryBuilder {
 	return httpm
 }
 
-//GetCacheExpire 得到缓存超时信息
+// GetCacheExpire 得到缓存超时信息
 func (httpm *HTTPQueryBuilder) GetCacheExpire() int32 {
 	return httpm.CacheExpireTime
 }
 
-//GetHTTPUniqid 生成HTTP请求的唯一标识
+// GetHTTPUniqid 生成HTTP请求的唯一标识
 func (httpm *HTTPQueryBuilder) GetHTTPUniqid(rtype string, method string, urls string, header map[string]string, postdata map[string]interface{}) string {
 	var UniqBase string
 	UniqBase += rtype + "|"
@@ -98,7 +98,7 @@ func (httpm *HTTPQueryBuilder) GetHTTPUniqid(rtype string, method string, urls s
 	return hex.EncodeToString(md5Ctx.Sum(nil))
 }
 
-//SetRequest 设置HTTP请求
+// SetRequest 设置HTTP请求
 func (httpm *HTTPQueryBuilder) SetRequest(needcache bool, rtype string, method string, url string, header map[string]string, postdata map[string]interface{}) string {
 	newRequest := HTTPRequest{}
 	newRequest.UniqID = httpm.GetHTTPUniqid(rtype, method, url, header, postdata)
@@ -113,17 +113,17 @@ func (httpm *HTTPQueryBuilder) SetRequest(needcache bool, rtype string, method s
 	return newRequest.UniqID
 }
 
-//SetCacheExpire 设置缓存超时信息
+// SetCacheExpire 设置缓存超时信息
 func (httpm *HTTPQueryBuilder) SetCacheExpire(ExpireTime int32) {
 	httpm.CacheExpireTime = ExpireTime
 }
 
-//InitHTTP 初始化http相关
+// InitHTTP 初始化http相关
 func (httpm *HTTPQueryBuilder) InitHTTP() {
 	httpm.ResponseCH = make(chan HTTPResponseResult, config.CACHEHTTP_CHANNEL_BUFFER_LEN)
 }
 
-//GetDebugInfo 得到debug信息
+// GetDebugInfo 得到debug信息
 func (httpm *HTTPQueryBuilder) GetDebugInfo() *DebugInfo {
 	return httpm.CommonParams.Debug
 }
@@ -136,7 +136,7 @@ func (httpm *HTTPQueryBuilder) GetDebugInfo() *DebugInfo {
 * db builder define
  */
 
-//DBQueryBuilder 数据库模块结构体
+// DBQueryBuilder 数据库模块结构体
 type DBQueryBuilder struct {
 	UseCache        bool
 	CacheKey        string
@@ -148,17 +148,17 @@ type DBQueryBuilder struct {
 	*CommonParams
 }
 
-//IsUseCache 是否使用缓存
+// IsUseCache 是否使用缓存
 func (dbm *DBQueryBuilder) IsUseCache() bool {
 	return dbm.UseCache
 }
 
-//GetCacheKey 得到缓存的key
+// GetCacheKey 得到缓存的key
 func (dbm *DBQueryBuilder) GetCacheKey() string {
 	return dbm.CacheKey
 }
 
-//SetCacheKey 设置缓存的key
+// SetCacheKey 设置缓存的key
 func (dbm *DBQueryBuilder) SetCacheKey(CacheKey string) {
 	dbm.CacheKey = CacheKey
 	if !dbm.UseCache {
@@ -166,12 +166,12 @@ func (dbm *DBQueryBuilder) SetCacheKey(CacheKey string) {
 	}
 }
 
-//GetCacheExpire 得到缓存超时信息
+// GetCacheExpire 得到缓存超时信息
 func (dbm *DBQueryBuilder) GetCacheExpire() int32 {
 	return dbm.CacheExpireTime
 }
 
-//SetCacheExpire 设置缓存超时信息
+// SetCacheExpire 设置缓存超时信息
 func (dbm *DBQueryBuilder) SetCacheExpire(ExpireTime int32) {
 	dbm.CacheExpireTime = ExpireTime
 	if !dbm.UseCache {
@@ -179,37 +179,37 @@ func (dbm *DBQueryBuilder) SetCacheExpire(ExpireTime int32) {
 	}
 }
 
-//GetBuilder 得到Builder信息
+// GetBuilder 得到Builder信息
 func (dbm *DBQueryBuilder) GetBuilder() *DBQueryBuilder {
 	return dbm
 }
 
-//SetSQL 设置SQL请求信息
+// SetSQL 设置SQL请求信息
 func (dbm *DBQueryBuilder) SetSQL(sql string) {
 	dbm.SQL = sql
 }
 
-//GetDbname 得到数据库名称
+// GetDbname 得到数据库名称
 func (dbm *DBQueryBuilder) GetDbname() string {
 	return dbm.DBName
 }
 
-//SetDbname 设置数据库名称
+// SetDbname 设置数据库名称
 func (dbm *DBQueryBuilder) SetDbname(name string) {
 	dbm.DBName = name
 }
 
-//SetSQLcondition 设置SQL查询条件
+// SetSQLcondition 设置SQL查询条件
 func (dbm *DBQueryBuilder) SetSQLcondition(con interface{}) {
 	dbm.SQLcondition = append(dbm.SQLcondition, con)
 }
 
-//SetResult 设置接收的数据结构
+// SetResult 设置接收的数据结构
 func (dbm *DBQueryBuilder) SetResult(data interface{}) {
 	dbm.Result = data
 }
 
-//GetDebugInfo 得到debug信息
+// GetDebugInfo 得到debug信息
 func (dbm *DBQueryBuilder) GetDebugInfo() *DebugInfo {
 	return dbm.CommonParams.Debug
 }
@@ -222,42 +222,43 @@ func (dbm *DBQueryBuilder) GetDebugInfo() *DebugInfo {
 * schedule builder define
  */
 
-//FuncDesc 方法描述结构体
+// FuncDesc 方法描述结构体
 type FuncDesc struct {
 	ModelFunc
 	CommP *CommonParams
 	Args  []interface{}
+	SEQID string
 }
 
-//ScheduleBuilder 结构体
+// ScheduleBuilder 结构体
 type ScheduleBuilder struct {
 	FuncDescs []FuncDesc
 	DataCH    chan ScheduleChan
 	*CommonParams
 }
 
-//GetBuilder 得到Builder信息
+// GetBuilder 得到Builder信息
 func (schedulem *ScheduleBuilder) GetBuilder() *ScheduleBuilder {
 	return schedulem
 }
 
-//SetSchedule 设置调度器信息
+// SetSchedule 设置调度器信息
 func (schedulem *ScheduleBuilder) SetSchedule(funcx ModelFunc, args ...interface{}) {
 	schedulem.FuncDescs = append(schedulem.FuncDescs, FuncDesc{ModelFunc: funcx, CommP: schedulem.CommonParams, Args: args})
 }
 
-//GetDebugInfo 得到debug信息
+// GetDebugInfo 得到debug信息
 func (schedulem *ScheduleBuilder) GetDebugInfo() *DebugInfo {
 	return schedulem.CommonParams.Debug
 }
 
-//ScheduleChan 结构体
+// ScheduleChan 结构体
 type ScheduleChan struct {
 	SEQID string
 	RET   BaseReturnData
 }
 
-//InitSchedule 初始化调度器相关
+// InitSchedule 初始化调度器相关
 func (schedulem *ScheduleBuilder) InitSchedule() {
 	schedulem.DataCH = make(chan ScheduleChan, config.SCHEDULE_CHANNEL_BUFFER_LEN)
 }

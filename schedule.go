@@ -11,41 +11,40 @@ import (
 	"github.com/time2k/letsgo-ng/config"
 )
 
-//Scheduler 调度器接口
+// Scheduler 调度器接口
 type Scheduler interface {
 	GetBuilder() *ScheduleBuilder
 	GetDebugInfo() *DebugInfo
 	InitSchedule()
 }
 
-//Schedule 结构体
+// Schedule 结构体
 type Schedule struct {
 }
 
-//newSchedule 返回一个Schedule类型指针
+// newSchedule 返回一个Schedule类型指针
 func newSchedule() *Schedule {
 	return &Schedule{}
 }
 
-//Init Schedule初始化
+// Init Schedule初始化
 func (c *Schedule) Init() {
 
 }
 
-//Run 运行多协程model函数调度器
+// Run 运行多协程model函数调度器
 func (c *Schedule) Run(ser Scheduler) ([]BaseReturnData, error) {
 	sch := ser.GetBuilder()
 	debug := ser.GetDebugInfo()
 	ser.InitSchedule()
 
 	var AllData []BaseReturnData
-	var AllSeqid []string
 	AllRecvData := make(map[string]BaseReturnData)
 
 	var NeedSchSum int
 	for k := range sch.FuncDescs {
 		seqid := c.GenUniqID()
-		AllSeqid = append(AllSeqid, seqid)
+		sch.FuncDescs[k].SEQID = seqid
 
 		debug.Add(fmt.Sprintln("Schedule seqid", seqid))
 
@@ -71,24 +70,24 @@ func (c *Schedule) Run(ser Scheduler) ([]BaseReturnData, error) {
 	}
 
 	//排序
-	for _, seqid := range AllSeqid {
-		AllData = append(AllData, AllRecvData[seqid])
+	for _, eachsch := range sch.FuncDescs {
+		AllData = append(AllData, AllRecvData[eachsch.SEQID])
 	}
 	return AllData, nil
 }
 
-//ScheduleWorker 调度器工人
+// ScheduleWorker 调度器工人
 func (c *Schedule) ScheduleWorker(sch *ScheduleBuilder, debug *DebugInfo, index int, seqid string) {
 	defer PanicFunc()
 	start := time.Now()
 	//运行函数
 	ret := sch.FuncDescs[index].ModelFunc(sch.FuncDescs[index].CommP, sch.FuncDescs[index].Args...)
 	end := time.Since(start)
-	debug.Add(fmt.Sprintln("Worker Time Cost", end, "seqid", seqid))
+	debug.Add(fmt.Sprintln("Worker Time Cost", end, "seqid", seqid, "args", sch.FuncDescs[index].Args))
 	sch.DataCH <- ScheduleChan{SEQID: seqid, RET: ret}
 }
 
-//GenUniqID 生成唯一id
+// GenUniqID 生成唯一id
 func (c *Schedule) GenUniqID() string {
 	un := time.Now().UnixNano()
 	md5Ctx := md5.New()
