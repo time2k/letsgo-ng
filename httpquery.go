@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"mime/multipart"
@@ -27,7 +26,7 @@ import (
 	"github.com/bitly/go-simplejson"
 )
 
-//HTTPQueryer 为cachehttp的接口
+// HTTPQueryer 为cachehttp的接口
 type HTTPQueryer interface {
 	GetCacheExpire() int32
 	GetBuilder() *HTTPQueryBuilder
@@ -35,7 +34,7 @@ type HTTPQueryer interface {
 	InitHTTP()
 }
 
-//HTTPQuery 为cachehttp的结构体
+// HTTPQuery 为cachehttp的结构体
 type HTTPQuery struct {
 	CL              *http.Client
 	Cache           *Cache
@@ -44,12 +43,12 @@ type HTTPQuery struct {
 	Logfile         string
 }
 
-//newHTTPQuery 返回一个HTTPQuery的结构体指针
+// newHTTPQuery 返回一个HTTPQuery的结构体指针
 func newHTTPQuery() *HTTPQuery {
 	return &HTTPQuery{}
 }
 
-//Init 初始化HTTPQuery结构体
+// Init 初始化HTTPQuery结构体
 func (c *HTTPQuery) Init(logfile string) {
 	c.CL = &http.Client{
 		Transport: &http.Transport{
@@ -69,26 +68,26 @@ func (c *HTTPQuery) Init(logfile string) {
 	c.Logfile = logfile
 }
 
-//SetCache 设置cache
+// SetCache 设置cache
 func (c *HTTPQuery) SetCache(cache *Cache) {
 	c.Cache = cache
 }
 
-//AddCounter 内置计数器++
+// AddCounter 内置计数器++
 func (c *HTTPQuery) AddCounter() {
 	c.HTTPcounterLock.Lock()
 	defer c.HTTPcounterLock.Unlock()
 	c.HTTPcounter++
 }
 
-//SubCounter 内置计数器--
+// SubCounter 内置计数器--
 func (c *HTTPQuery) SubCounter() {
 	c.HTTPcounterLock.Lock()
 	defer c.HTTPcounterLock.Unlock()
 	c.HTTPcounter--
 }
 
-//RandNum 在指定范围随机输出数字
+// RandNum 在指定范围随机输出数字
 func RandNum(ran int) int {
 	t := time.Now().UnixNano()
 	rand.Seed(t)
@@ -96,7 +95,7 @@ func RandNum(ran int) int {
 	return rd
 }
 
-//GenUniqID 生成与时间有关的随机字符
+// GenUniqID 生成与时间有关的随机字符
 func (c *HTTPQuery) GenUniqID() string {
 	un := time.Now().UnixNano()
 	md5Ctx := md5.New()
@@ -105,7 +104,7 @@ func (c *HTTPQuery) GenUniqID() string {
 	return cipherStr
 }
 
-//SampleHTTPQuery 定义client
+// SampleHTTPQuery 定义client
 func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan HTTPResponseResult) error {
 	//如果http请求响应日志有定义
 	httpLog := new(log.Logger)
@@ -238,7 +237,7 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 			log.Println("[error]CacheHTTP request error:", err.Error())
 			return err
 		}
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNoContent {
 			// //不抛出错误而是接口降级
 			debug.Add(fmt.Sprintf("HTTP Query Downgrade: non-200 StatusCode:%s", rq.URL))
 			log.Println("[error]CacheHTTP request got non-200 StatusCode:", rq.URL)
@@ -285,7 +284,7 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 				body = append(body, buf...)
 			}
 		default:
-			body, err = ioutil.ReadAll(resp.Body)
+			body, err = io.ReadAll(resp.Body)
 			if err != nil {
 				log.Panicln("[error]CacheHTTP read response:", err.Error())
 			}
@@ -319,7 +318,7 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 	return nil
 }
 
-//Run 执行方法,支持http多协程请求并缓存
+// Run 执行方法,支持http多协程请求并缓存
 func (c *HTTPQuery) Run(cher HTTPQueryer) (map[string]interface{}, error) {
 	type CacheData struct {
 		NeedCache bool
