@@ -12,6 +12,11 @@ type SSE struct {
 	ServerInstant *sse.Server
 }
 
+// newSSE 返回一个SSE类型指针
+func newSSE() *SSE {
+	return &SSE{}
+}
+
 // 初始化sse服务端
 func (s *SSE) Init() {
 	s.ServerInstant = sse.New()        // create SSE broadcaster server

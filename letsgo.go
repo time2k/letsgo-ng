@@ -222,6 +222,7 @@ func (L *Letsgo) InitMicroserviceClient(client MicroserviceClienter) {
 
 // InitSSE 初始化http sse服务端
 func (L *Letsgo) InitHTTPSSEServer() {
+	L.SSE = newSSE()
 	L.SSE.Init()
 }
 
