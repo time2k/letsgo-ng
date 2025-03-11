@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-//CommonParams Letsgo handler,model 通用参数
+// CommonParams Letsgo handler,model 通用参数
 type CommonParams struct {
 	//Letsgo      *Letsgo
 	HTTPContext echo.Context
@@ -22,19 +22,19 @@ type CommonParams struct {
 	Debug       *DebugInfo
 }
 
-//Init 初始化
+// Init 初始化
 func (commp *CommonParams) Init() {
 	commp.Params = make(map[string]string)
 	commp.Debug = NewDebugInfo()
 }
 
-//SetParam 插入参数
+// SetParam 插入参数
 func (commp *CommonParams) SetParam(name string, value string) bool {
 	commp.Params[name] = value
 	return true
 }
 
-//GetParam 读出参数
+// GetParam 读出参数
 func (commp *CommonParams) GetParam(name string) string {
 	v, ok := commp.Params[name]
 	if ok != true {
@@ -43,7 +43,7 @@ func (commp *CommonParams) GetParam(name string) string {
 	return v
 }
 
-//Letsgo 框架依赖功能结构体
+// Letsgo 框架依赖功能结构体
 type Letsgo struct {
 	DBC
 	Cache              *Cache
@@ -56,14 +56,15 @@ type Letsgo struct {
 	LoggerFile         *os.File
 	ContextSet         contextSet
 	MicroserviceClient MicroserviceClienter
+	SSE                *SSE
 }
 
-//NewLetsgo 返回一个Letsgo类型的结构体指针
+// NewLetsgo 返回一个Letsgo类型的结构体指针
 func NewLetsgo() {
 	Default = &Letsgo{}
 }
 
-//Init 初始化框架
+// Init 初始化框架
 func (L *Letsgo) Init() {
 	//init ModulePool
 	/*L.ModulePool = sync.Pool{
@@ -74,7 +75,7 @@ func (L *Letsgo) Init() {
 	hystrix.ConfigureCommand(config.HYSTRIX_DEFAULT_TAG, config.HYSTRIX_DEFAULT_CONFIG)
 }
 
-//InitDBQuery 初始化DBQuery
+// InitDBQuery 初始化DBQuery
 func (L *Letsgo) InitDBQuery(cfg config.DBconfigStruct) {
 	//db init
 	L.DBC = make(map[string]DBSet)
@@ -124,7 +125,7 @@ func (L *Letsgo) InitDBQuery(cfg config.DBconfigStruct) {
 
 }
 
-//InitMemcached 初始化memcached
+// InitMemcached 初始化memcached
 func (L *Letsgo) InitMemcached(MemcachedHost []string, MemcachedMaxIdleConns int, MemcachedMaxTimeout time.Duration) {
 	//init cache
 	L.Cache = newCache()
@@ -137,7 +138,7 @@ func (L *Letsgo) InitMemcached(MemcachedHost []string, MemcachedMaxIdleConns int
 	L.Cache.Init()
 }
 
-//InitRedis 初始化redis, RedisType 1-standalone 2-redis cluster
+// InitRedis 初始化redis, RedisType 1-standalone 2-redis cluster
 func (L *Letsgo) InitRedis(RedisType int, RedisServers []string, RedisDialOption []redis.DialOption) {
 	//init cache
 	L.Cache = newCache()
@@ -154,7 +155,7 @@ func (L *Letsgo) InitRedis(RedisType int, RedisServers []string, RedisDialOption
 	L.Cache.Init()
 }
 
-//InitHTTPQuery 初始化http
+// InitHTTPQuery 初始化http
 func (L *Letsgo) InitHTTPQuery(HTTPLog string) {
 	//init HTTPQuery
 	L.HTTPQuery = newHTTPQuery()
@@ -165,7 +166,7 @@ func (L *Letsgo) InitHTTPQuery(HTTPLog string) {
 	L.HTTPQuery.Init(HTTPLog)
 }
 
-//InitLog 初始化日志
+// InitLog 初始化日志
 func (L *Letsgo) InitLog(LogFileName string) {
 	logfile, err := os.OpenFile(LogFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
@@ -175,13 +176,13 @@ func (L *Letsgo) InitLog(LogFileName string) {
 	L.Logger = log.New(logfile, "[LetsGo Log]", log.Ldate|log.Ltime|log.Llongfile)
 }
 
-//InitSchedule 初始化并发器
+// InitSchedule 初始化并发器
 func (L *Letsgo) InitSchedule() {
 	L.Schedules = newSchedule()
 	L.Schedules.Init()
 }
 
-//InitJSONRPC 初始化JSON RPC
+// InitJSONRPC 初始化JSON RPC
 func (L *Letsgo) InitJSONRPC(RPCConfig map[string]config.RPCconfig) {
 	//init jsonrpc
 	L.JSONRPCClient = NewJSONRPCClient()
@@ -191,13 +192,13 @@ func (L *Letsgo) InitJSONRPC(RPCConfig map[string]config.RPCconfig) {
 	}
 }
 
-//InitMemConfig 初始化内存式配置
+// InitMemConfig 初始化内存式配置
 func (L *Letsgo) InitMemConfig() {
 	//init config
 	InitConfig()
 }
 
-//InitCacheLock 初始化缓存锁
+// InitCacheLock 初始化缓存锁
 func (L *Letsgo) InitCacheLock() {
 	//init CacheLock
 	L.CacheLock = newCacheLock()
@@ -207,19 +208,24 @@ func (L *Letsgo) InitCacheLock() {
 	L.CacheLock.Cache = L.Cache
 }
 
-//InitContextSet 初始化上下文集合
+// InitContextSet 初始化上下文集合
 func (L *Letsgo) InitContextSet() {
 	//init ContextSet
 	L.ContextSet = newContextSet()
 }
 
-//InitMicroServiceClient 初始化微服务框架客户端
+// InitMicroServiceClient 初始化微服务框架客户端
 func (L *Letsgo) InitMicroserviceClient(client MicroserviceClienter) {
 	L.MicroserviceClient = client
 	L.MicroserviceClient.Init()
 }
 
-//Close 关闭Letsgo框架
+// InitSSE 初始化http sse服务端
+func (L *Letsgo) InitHTTPSSEServer() {
+	L.SSE.Init()
+}
+
+// Close 关闭Letsgo框架
 func (L *Letsgo) Close() {
 	if L.DBC != nil {
 		for _, v := range L.DBC {
@@ -248,5 +254,5 @@ func (L *Letsgo) Close() {
 	}
 }
 
-//Default 框架自持变量
+// Default 框架自持变量
 var Default *Letsgo
