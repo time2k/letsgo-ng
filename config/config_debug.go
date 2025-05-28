@@ -1,3 +1,4 @@
+//go:build debug
 // +build debug
 
 package config
@@ -26,7 +27,7 @@ var (
 
 	//redis相关设置
 	REDIS_POOL_MAXIDLE         = 10
-	REDIS_POOL_MAXACTIVE       = 100
+	REDIS_POOL_MAXACTIVE       = 200
 	REDIS_POOL_IDLETIMEOUT     = 5 * time.Minute
 	REDIS_POOL_MAXCONNLIFETIME = 0 * time.Minute
 	REDIS_POLL_ALLOW_WAIT      = true
