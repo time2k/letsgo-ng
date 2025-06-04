@@ -40,7 +40,7 @@ func (c *CacheLock) Lock(lockid int, prefix string, OWNER string, expiremilsecon
 		}
 		//println("wait for release lock", OWNER_ID)
 		//time.Sleep(time.Duration(10) * time.Millisecond)
-		time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
+		time.Sleep(time.Duration(rand.Intn(20)) * time.Millisecond)
 	}
 }
 
