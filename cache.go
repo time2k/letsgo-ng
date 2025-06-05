@@ -8,19 +8,19 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-//Cache 结构体
+// Cache 结构体
 type Cache struct {
 	Memcached           *Lmemcache
 	Redis               Lrediser
 	UseRedisOrMemcached int //使用哪种缓存 1-memcached 2-redis
 }
 
-//newCache 返回一个Cache结构体指针
+// newCache 返回一个Cache结构体指针
 func newCache() *Cache {
 	return &Cache{}
 }
 
-//Init 初始化
+// Init 初始化
 func (c *Cache) Init() {
 	if c.Memcached != nil {
 		c.UseRedisOrMemcached = 1
@@ -30,7 +30,7 @@ func (c *Cache) Init() {
 	}
 }
 
-//Get 获得缓存
+// Get 获得缓存
 func (c *Cache) Get(cachekey string, DataStruct interface{}) (bool, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	CacheGet := false
@@ -73,7 +73,7 @@ func (c *Cache) Get(cachekey string, DataStruct interface{}) (bool, error) {
 	return CacheGet, nil
 }
 
-//Set 设置缓存
+// Set 设置缓存
 func (c *Cache) Set(cachekey string, DataStruct interface{}, expire int32) error {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	switch c.UseRedisOrMemcached {
@@ -99,7 +99,7 @@ func (c *Cache) Set(cachekey string, DataStruct interface{}, expire int32) error
 	return nil
 }
 
-//Delete 删除缓存
+// Delete 删除缓存
 func (c *Cache) Delete(cachekey string) error {
 	switch c.UseRedisOrMemcached {
 	case 1:
@@ -120,10 +120,8 @@ func (c *Cache) Delete(cachekey string) error {
 	return nil
 }
 
-//SetNX only for redis distribut lock
-func (c *Cache) SetNX(cachekey string, DataStruct interface{}, expire int32) (int, error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
+// SetNX only for redis distribut lock
+func (c *Cache) SetNX(cachekey string, owner string, expire int32) (int, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
 		return 1, nil
@@ -131,12 +129,7 @@ func (c *Cache) SetNX(cachekey string, DataStruct interface{}, expire int32) (in
 		conn := c.Redis.GetConn(true)
 		defer conn.Close()
 
-		str, err := json.MarshalToString(DataStruct)
-		if err != nil {
-			return 0, fmt.Errorf("[error]Cache Redisc marshall struct: %s", err.Error())
-		}
-
-		_, err2 := redis.String(conn.Do("SET", cachekey, str, "NX", "PX", expire))
+		_, err2 := redis.String(conn.Do("SET", cachekey, owner, "NX", "PX", expire))
 
 		if err2 == redis.ErrNil {
 			// The lock was not successful, it already exists.
@@ -150,7 +143,7 @@ func (c *Cache) SetNX(cachekey string, DataStruct interface{}, expire int32) (in
 	return 0, nil
 }
 
-//BRPOP only for redis queue
+// BRPOP only for redis queue
 func (c *Cache) BRPOP(cachekey string, DataStruct interface{}, timeout int32) (bool, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -179,7 +172,7 @@ func (c *Cache) BRPOP(cachekey string, DataStruct interface{}, timeout int32) (b
 	return false, nil
 }
 
-//LPUSH only for redis queue
+// LPUSH only for redis queue
 func (c *Cache) LPUSH(cachekey string, DataStruct interface{}) (int, error) {
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -205,7 +198,7 @@ func (c *Cache) LPUSH(cachekey string, DataStruct interface{}) (int, error) {
 	return 0, nil
 }
 
-//DO only for redis
+// DO only for redis
 func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
@@ -219,7 +212,7 @@ func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-//PUB only for redis
+// PUB only for redis
 func (c *Cache) PUB(channelname string, content string) error {
 	switch c.UseRedisOrMemcached {
 	case 1:
@@ -235,7 +228,7 @@ func (c *Cache) PUB(channelname string, content string) error {
 	return nil
 }
 
-//GetSubConn only for redis
+// GetSubConn only for redis
 func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
@@ -253,7 +246,7 @@ func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 	return nil, nil
 }
 
-//SUB only for redis and use conn default timeout，you should use in "for" loop statment for sub
+// SUB only for redis and use conn default timeout，you should use in "for" loop statment for sub
 func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
@@ -271,7 +264,7 @@ func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 	return "", nil
 }
 
-//SUB only for redis and use timeout param，you should use in "for" loop statment for sub
+// SUB only for redis and use timeout param，you should use in "for" loop statment for sub
 func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
@@ -289,7 +282,7 @@ func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string
 	return "", nil
 }
 
-//Show 显示设置
+// Show 显示设置
 func (c *Cache) Show() string {
 	switch c.UseRedisOrMemcached {
 	case 1:

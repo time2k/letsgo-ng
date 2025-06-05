@@ -45,7 +45,7 @@ func (c *CacheLock) Lock(lockid int, prefix string, OWNER string, expiremilsecon
 }
 
 // Unlock 解锁
-func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
+func (c *CacheLock) UnlockOld(lockid int, prefix string, OWNER string) {
 	//必须使用redis
 	if c.Cache.UseRedisOrMemcached == 1 {
 		log.Println("CacheLock must use redis!")
@@ -64,5 +64,26 @@ func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
 	} else {
 		//println("lock already change owner!")
 	}
+	return
+}
+
+// Unlock 解锁
+func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
+
+	const LuaCheckAndDeleteDistributionLock = `
+	if redis.call("get",KEYS[1]) == ARGV[1] then
+		return redis.call("del",KEYS[1])
+	else
+		return 0
+	end
+	`
+
+	//必须使用redis
+	if c.Cache.UseRedisOrMemcached == 1 {
+		log.Println("CacheLock must use redis!")
+		return
+	}
+	lockkey := "LOCK_" + prefix + "_" + strconv.Itoa(lockid)
+	c.Cache.DO("EVAL", LuaCheckAndDeleteDistributionLock, 1, lockkey, OWNER)
 	return
 }
