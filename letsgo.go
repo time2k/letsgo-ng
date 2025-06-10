@@ -11,7 +11,7 @@ import (
 
 	"github.com/afex/hystrix-go/hystrix"
 	_ "github.com/go-sql-driver/mysql" //mysql
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // CommonParams Letsgo handler,model 通用参数

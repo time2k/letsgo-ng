@@ -5,13 +5,13 @@ package letsgo
  */
 
 import (
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
-//HandlerFunc 定义lestgo handler func
+// HandlerFunc 定义lestgo handler func
 type HandlerFunc func(commp *CommonParams) error
 
-//Handler letsgo框架加载handler
+// Handler letsgo框架加载handler
 func Handler(myfunc HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer PanicFunc()
@@ -22,7 +22,7 @@ func Handler(myfunc HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-//GenCommparams 通用参数处理
+// GenCommparams 通用参数处理
 func GenCommparams(c echo.Context) *CommonParams {
 	commp := CommonParams{}
 	commp.Init()
