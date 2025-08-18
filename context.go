@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-//ContextSet 结构体
+// ContextSet 结构体
 type contextOne struct {
 	CTX           context.Context
 	CTXCancelFunc context.CancelFunc
@@ -14,13 +14,13 @@ type contextOne struct {
 
 type contextSet map[string]contextOne
 
-//newContextSet 返回一个ContextSet结构体指针
+// newContextSet 返回一个ContextSet结构体指针
 func newContextSet() contextSet {
 	cs := make(contextSet, 0)
 	return cs
 }
 
-//新建一个ctx
+// 新建一个ctx
 func (ct contextSet) New(ctxtype string, ctxname string, parentname string, timeout time.Duration) (context.Context, context.CancelFunc, error) {
 	//存在同名
 	if _, ok := ct[ctxname]; ok {
@@ -50,7 +50,7 @@ func (ct contextSet) New(ctxtype string, ctxname string, parentname string, time
 	return co.CTX, co.CTXCancelFunc, nil
 }
 
-//获取一个ctx
+// 获取一个ctx
 func (ct contextSet) Get(ctxname string) (context.Context, context.CancelFunc, error) {
 	if _, ok := ct[ctxname]; !ok {
 		return nil, nil, errors.New("[error]contextSet Get none-exists ctxname:" + ctxname)
@@ -59,7 +59,7 @@ func (ct contextSet) Get(ctxname string) (context.Context, context.CancelFunc, e
 	return gt.CTX, gt.CTXCancelFunc, nil
 }
 
-//删除一个ctx
+// 删除一个ctx
 func (ct contextSet) Remove(ctxname string) error {
 	if _, ok := ct[ctxname]; !ok {
 		return errors.New("[error]contextSet Remove none-exists ctxname:" + ctxname)
@@ -68,10 +68,9 @@ func (ct contextSet) Remove(ctxname string) error {
 	return nil
 }
 
-//依次cancel所有ctx
+// 依次cancel所有ctx
 func (ct contextSet) CancelAll() {
 	for _, ctxo := range ct {
 		ctxo.CTXCancelFunc()
 	}
-	return
 }

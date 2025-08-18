@@ -6,28 +6,28 @@ import (
 	"time"
 )
 
-//SingleConfigHashMap 单配置的hashmap结构
+// SingleConfigHashMap 单配置的hashmap结构
 type SingleConfigHashMap struct {
 	RwLock    sync.RWMutex
 	Config    map[string]string
 	ConfigTTL int64
 }
 
-//ConfigSet 多个配置的hashmap结构
+// ConfigSet 多个配置的hashmap结构
 type ConfigSet struct {
 	RwLock    sync.RWMutex
 	ConfigSet map[string]*SingleConfigHashMap
 }
 
-//CONFIG_SET 常驻内存的变量
+// CONFIG_SET 常驻内存的变量
 var CONFIG_SET = new(ConfigSet)
 
-//InitConfig 初始化config
+// InitConfig 初始化config
 func InitConfig() {
 	CONFIG_SET.ConfigSet = make(map[string]*SingleConfigHashMap)
 }
 
-//Get SingleConfig 获取具体配置项方法
+// Get SingleConfig 获取具体配置项方法
 func (SC *SingleConfigHashMap) Get(ConfigName string) (string, bool) {
 	SC.RwLock.RLock()
 	defer SC.RwLock.RUnlock()
@@ -37,14 +37,14 @@ func (SC *SingleConfigHashMap) Get(ConfigName string) (string, bool) {
 	return "", false
 }
 
-//Set SingleConfig 设置方法
+// Set SingleConfig 设置方法
 func (SC *SingleConfigHashMap) Set(ConfigName string, ConfigValue string) {
 	SC.RwLock.Lock()
 	defer SC.RwLock.Unlock()
 	SC.Config[ConfigName] = ConfigValue
 }
 
-//GetConfig 获取配置集方法
+// GetConfig 获取配置集方法
 func GetConfig(letsgo *Letsgo, ConfigSetName string) *SingleConfigHashMap {
 	CONFIG_SET.RwLock.Lock() //因为包含写操作，要加写锁
 	defer CONFIG_SET.RwLock.Unlock()
@@ -68,7 +68,7 @@ func GetConfig(letsgo *Letsgo, ConfigSetName string) *SingleConfigHashMap {
 	return CONFIG_SET.ConfigSet[ConfigSetName]
 }
 
-//SetConfig 设置配置集方法
+// SetConfig 设置配置集方法
 func SetConfig(letsgo *Letsgo, ConfigSetName string) error {
 	switch ConfigSetName {
 	case "EXAMPLE_SET":
@@ -83,7 +83,6 @@ func SetConfig(letsgo *Letsgo, ConfigSetName string) error {
 		return nil
 
 	default:
-		return fmt.Errorf("Lib getconfig get no registed config")
+		return fmt.Errorf("lib getconfig get no registed config")
 	}
-
 }

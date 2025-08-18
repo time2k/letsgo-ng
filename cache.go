@@ -202,7 +202,7 @@ func (c *Cache) LPUSH(cachekey string, DataStruct interface{}) (int, error) {
 func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
-		return nil, fmt.Errorf("Memcached Don't support DO")
+		return nil, fmt.Errorf("memcached Don't support DO")
 	case 2:
 		conn := c.Redis.GetConn(true)
 		defer conn.Close()
@@ -216,7 +216,7 @@ func (c *Cache) DO(CMD string, Params ...interface{}) (interface{}, error) {
 func (c *Cache) PUB(channelname string, content string) error {
 	switch c.UseRedisOrMemcached {
 	case 1:
-		return fmt.Errorf("Memcached Don't support PUB")
+		return fmt.Errorf("memcached Don't support PUB")
 	case 2:
 		conn := c.Redis.GetConn(true)
 		defer conn.Close()
@@ -232,7 +232,7 @@ func (c *Cache) PUB(channelname string, content string) error {
 func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
-		return nil, fmt.Errorf("Memcached Don't support GETSUBCONN")
+		return nil, fmt.Errorf("memcached Don't support GETSUBCONN")
 	case 2:
 		conn := c.Redis.GetConn(false) //can't use redisc retry_conn
 		//defer conn.Close()
@@ -250,7 +250,7 @@ func (c *Cache) GETSUBCONN(channelname string) (*redis.PubSubConn, error) {
 func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
-		return "", fmt.Errorf("Memcached Don't support SUB")
+		return "", fmt.Errorf("memcached Don't support SUB")
 	case 2:
 		switch n := psc.Receive().(type) {
 		case error:
@@ -268,7 +268,7 @@ func (c *Cache) SUB(psc *redis.PubSubConn) (string, error) {
 func (c *Cache) TIMEOUTSUB(psc *redis.PubSubConn, timeout time.Duration) (string, error) {
 	switch c.UseRedisOrMemcached {
 	case 1:
-		return "", fmt.Errorf("Memcached Don't support SUB")
+		return "", fmt.Errorf("memcached Don't support SUB")
 	case 2:
 		switch n := psc.ReceiveWithTimeout(timeout).(type) {
 		case error:

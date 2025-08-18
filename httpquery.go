@@ -17,7 +17,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/time2k/letsgo-ng/config"
@@ -36,11 +35,9 @@ type HTTPQueryer interface {
 
 // HTTPQuery 为cachehttp的结构体
 type HTTPQuery struct {
-	CL              *http.Client
-	Cache           *Cache
-	HTTPcounter     int
-	HTTPcounterLock sync.Mutex
-	Logfile         string
+	CL      *http.Client
+	Cache   *Cache
+	Logfile string
 }
 
 // newHTTPQuery 返回一个HTTPQuery的结构体指针
@@ -73,20 +70,6 @@ func (c *HTTPQuery) SetCache(cache *Cache) {
 	c.Cache = cache
 }
 
-// AddCounter 内置计数器++
-func (c *HTTPQuery) AddCounter() {
-	c.HTTPcounterLock.Lock()
-	defer c.HTTPcounterLock.Unlock()
-	c.HTTPcounter++
-}
-
-// SubCounter 内置计数器--
-func (c *HTTPQuery) SubCounter() {
-	c.HTTPcounterLock.Lock()
-	defer c.HTTPcounterLock.Unlock()
-	c.HTTPcounter--
-}
-
 // RandNum 在指定范围随机输出数字
 func RandNum(ran int) int {
 	t := time.Now().UnixNano()
@@ -111,10 +94,10 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 	if c.Logfile != "" {
 		//定义一个文件
 		logFile, err := os.OpenFile(c.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		defer logFile.Close()
 		if err != nil {
 			log.Fatalln("open file error !")
 		}
+		defer logFile.Close()
 		httpLog = log.New(logFile, "\n[Letsgo-cacheHTTP] ", log.LstdFlags)
 	}
 
@@ -151,12 +134,12 @@ func (c *HTTPQuery) SampleHTTPQuery(rq HTTPRequest, debug *DebugInfo, ret chan H
 					}
 					file := v.(*multipart.FileHeader)
 					fs, err := file.Open()
-					defer fs.Close()
 					if err != nil {
 						debug.Add(fmt.Sprintf("CacheHTTP multipart open error: %s", err.Error()))
 						log.Println("[error]CacheHTTP multipart open error:", err.Error())
 						return err
 					}
+					defer fs.Close()
 					if _, err := io.Copy(fw, fs); err != nil {
 						debug.Add(fmt.Sprintf("CacheHTTP multipart io.Copy error: %s", err.Error()))
 						log.Println("[error]CacheHTTP multipart io.Copy error:", err.Error())
@@ -351,7 +334,7 @@ func (c *HTTPQuery) Run(cher HTTPQueryer) (map[string]interface{}, error) {
 		cachekey := "HTTP_" + eachhttp.UniqID
 		var retdata []byte
 		if eachhttp.NeedCache {
-			if isget, err := c.Cache.Get(cachekey, &retdata); isget != true { //cache miss or error
+			if isget, err := c.Cache.Get(cachekey, &retdata); !isget { //cache miss or error
 				if err != nil {
 					return nil, fmt.Errorf("[error]CacheHTTP get cache:%s %s", err.Error(), UNIQID)
 				}
@@ -360,7 +343,6 @@ func (c *HTTPQuery) Run(cher HTTPQueryer) (map[string]interface{}, error) {
 				//debug.Add(fmt.Sprintf("CacheHTTP UniqID: %s", uniqid))
 
 				go c.SampleHTTPQuery(eachhttp, debug, ch.ResponseCH)
-				c.AddCounter()
 				AllCacheData[eachhttp.UniqID] = CacheData{NeedCache: eachhttp.NeedCache, CacheKey: cachekey, Rtype: eachhttp.Rtype, HTTPError: false, Cachedata: nil}
 				NeedHTTPSum++
 			} else { //get cache
@@ -370,7 +352,6 @@ func (c *HTTPQuery) Run(cher HTTPQueryer) (map[string]interface{}, error) {
 		} else {
 			//goroutine http
 			go c.SampleHTTPQuery(eachhttp, debug, ch.ResponseCH)
-			c.AddCounter()
 			AllCacheData[eachhttp.UniqID] = CacheData{NeedCache: eachhttp.NeedCache, CacheKey: "", Rtype: eachhttp.Rtype, HTTPError: false, Cachedata: nil}
 			NeedHTTPSum++
 		}
@@ -394,15 +375,15 @@ func (c *HTTPQuery) Run(cher HTTPQueryer) (map[string]interface{}, error) {
 			return nil, fmt.Errorf("[error]CacheHTTP channel timeout after %d second: %s", config.CACHEHTTP_SELECT_TIMEOUT, UNIQID)
 		}
 		NeedHTTPSum--
-		c.SubCounter()
+		//c.SubCounter()
 	}
 
 	retdata := make(map[string]interface{}) // key:UniqID value:interface{}
 	for uniqid, cachedata := range AllCacheData {
-		if cachedata.CacheKey != "" && cachedata.NeedCache == true {
+		if cachedata.CacheKey != "" && cachedata.NeedCache {
 			//downgrade get shorter TTL 60 second
 			cacheexpire := expire
-			if cachedata.HTTPError == true {
+			if cachedata.HTTPError {
 				cacheexpire = config.CACHEHTTP_DOWNGRADE_CACHE_EXPIRE
 			}
 

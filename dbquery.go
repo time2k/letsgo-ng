@@ -1,9 +1,7 @@
 package letsgo
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/gob"
 	"fmt"
 	"reflect"
 	"strings"
@@ -93,8 +91,8 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 	rtype := reflect.TypeOf(Result).Elem()
 	rvalue := reflect.ValueOf(Result).Elem()
 
-	if UseCache == true { //do use cache
-		if isget, err := c.Cache.Get(CacheKey, Result); isget != true { //cache miss or error
+	if UseCache { //do use cache
+		if isget, err := c.Cache.Get(CacheKey, Result); !isget { //cache miss or error
 			if err != nil {
 				return false, fmt.Errorf("[error]CacheQuery get cache: %s", err.Error())
 			}
@@ -140,7 +138,7 @@ func (c *DBQuery) SelectOne(cqer DBQueryer) (bool, error) {
 				return false, fmt.Errorf("[error]CacheQuery DB scan action: %w", err)
 			}
 		}
-		if UseCache == true { //do use cache
+		if UseCache { //do use cache
 			err = c.Cache.Set(CacheKey, Result, CacheExpire)
 			if err != nil {
 				return false, fmt.Errorf("[error]CacheQuery set cache: %s", err.Error())
@@ -177,8 +175,8 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	rtype := reflect.TypeOf(Result).Elem().Elem()
 	rvalue := reflect.ValueOf(Result).Elem() //indeed a slice
 
-	if UseCache == true { //do use cache
-		if isget, err := c.Cache.Get(CacheKey, Result); isget != true { //cache miss or error
+	if UseCache { //do use cache
+		if isget, err := c.Cache.Get(CacheKey, Result); !isget { //cache miss or error
 			if err != nil {
 				return false, fmt.Errorf("[CacheQuery]get cache: %s", err.Error())
 			}
@@ -239,7 +237,7 @@ func (c *DBQuery) SelectMulti(cqer DBQueryer) (bool, error) {
 	if rowc == 0 {
 		return false, nil
 	}
-	if UseCache == true { //do use cache
+	if UseCache { //do use cache
 		err = c.Cache.Set(CacheKey, Result, CacheExpire)
 		if err != nil {
 			return false, fmt.Errorf("[CacheQuery]set cache: %s", err.Error())
@@ -318,13 +316,4 @@ func (c *DBQuery) ReadMSBalancer(DbName string) (*sql.DB, error) {
 	}
 
 	return c.DBset[DbName].Master, nil
-}
-
-// deepCopy 深拷贝方法
-func deepCopy(dst, src interface{}) error {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
-		return err
-	}
-	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
 }

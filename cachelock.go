@@ -54,7 +54,7 @@ func (c *CacheLock) UnlockOld(lockid int, prefix string, OWNER string) {
 	lockkey := "LOCK_" + prefix + "_" + strconv.Itoa(lockid)
 	var lockowner string
 	isget, _ := c.Cache.Get(lockkey, &lockowner)
-	if isget == false {
+	if !isget {
 		//println("lock missed!")
 		return
 	}
@@ -64,7 +64,6 @@ func (c *CacheLock) UnlockOld(lockid int, prefix string, OWNER string) {
 	} else {
 		//println("lock already change owner!")
 	}
-	return
 }
 
 // Unlock 解锁
@@ -85,5 +84,4 @@ func (c *CacheLock) Unlock(lockid int, prefix string, OWNER string) {
 	}
 	lockkey := "LOCK_" + prefix + "_" + strconv.Itoa(lockid)
 	c.Cache.DO("EVAL", LuaCheckAndDeleteDistributionLock, 1, lockkey, OWNER)
-	return
 }

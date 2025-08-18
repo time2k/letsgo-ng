@@ -20,7 +20,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.1.0 // indirect
@@ -28,8 +27,6 @@ require (
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/serf v0.9.7 // indirect
-	github.com/kr/pretty v0.2.0 // indirect
-	github.com/kr/text v0.1.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -37,10 +34,8 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190710185942-9d28bd7c0945 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
@@ -48,6 +43,4 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

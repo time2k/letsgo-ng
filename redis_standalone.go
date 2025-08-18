@@ -6,17 +6,17 @@ import (
 	"github.com/gomodule/redigo/redis" //redigo
 )
 
-//Lredis 结构体
+// Lredis 结构体
 type Lredis struct {
 	Redis *redis.Pool
 }
 
-//newLredis 返回一个Lredis结构体指针
+// newLredis 返回一个Lredis结构体指针
 func newLredis() *Lredis {
 	return &Lredis{}
 }
 
-//Init 连接redis cluster集群
+// Init 连接redis cluster集群
 func (c *Lredis) Init(serverlist []string, options []redis.DialOption) error {
 	var err error
 	c.Redis, err = RedisCreatePool(serverlist[0], options...)
@@ -27,17 +27,17 @@ func (c *Lredis) Init(serverlist []string, options []redis.DialOption) error {
 	return nil
 }
 
-//GetConn 得到一个redis.Conn
+// GetConn 得到一个redis.Conn
 func (c *Lredis) GetConn(Retry bool) redis.Conn {
 	return c.Redis.Get()
 }
 
-//DoOnce 映射redisc.Do 方法
+// DoOnce 映射redisc.Do 方法
 func (c *Lredis) DoOnce(commandName string, args ...interface{}) (reply interface{}, err error) {
 	redisconn := c.Redis.Get()
 	defer redisconn.Close()
 	if redisconn.Err() != nil {
-		return nil, fmt.Errorf("Lredis:err while conn: %s", redisconn.Err().Error())
+		return nil, fmt.Errorf("lredis:err while conn: %s", redisconn.Err().Error())
 	}
 	return redisconn.Do(commandName, args...)
 }

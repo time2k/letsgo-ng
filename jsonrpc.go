@@ -8,30 +8,30 @@ import (
 	"sync"
 )
 
-//RPCconfig rpc服务器配置结构体
+// RPCconfig rpc服务器配置结构体
 type RPCconfig struct {
 	Network          string //网络 可以是tcp udp或者http
 	Address          string //具体地址及端口
 	MicroserviceName string //rpc的微服务名称
 }
 
-//JSONRPCClient 结构体
+// JSONRPCClient 结构体
 type JSONRPCClient struct {
 	Service map[string]RPCconfig
 	Lock    sync.Mutex
 }
 
-//NewJSONRPCClient 返回一个JSONRPCClient结构体指针
+// NewJSONRPCClient 返回一个JSONRPCClient结构体指针
 func NewJSONRPCClient() *JSONRPCClient {
 	return &JSONRPCClient{}
 }
 
-//Init JSONRPCClient初始化
+// Init JSONRPCClient初始化
 func (c *JSONRPCClient) Init() {
 	c.Service = make(map[string]RPCconfig)
 }
 
-//Set 设置config
+// Set 设置config
 func (c *JSONRPCClient) Set(service, network, address, microservice_name string) error {
 	c.Lock.Lock()
 	c.Service[service] = RPCconfig{Network: network, Address: address, MicroserviceName: microservice_name}
@@ -39,7 +39,7 @@ func (c *JSONRPCClient) Set(service, network, address, microservice_name string)
 	return nil
 }
 
-//Dial 连接到一个rpc服务器
+// Dial 连接到一个rpc服务器
 func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
 	thisservice, ok := c.Service[service]
 	if !ok {
@@ -69,7 +69,7 @@ func (c *JSONRPCClient) Dial(service string) (*rpc.Client, error) {
 	return client, nil
 }
 
-//DialWithMicroserviceFind 使用微服务发现并连接到rpc服务器
+// DialWithMicroserviceFind 使用微服务发现并连接到rpc服务器
 func (c *JSONRPCClient) DialWithServiceDiscovery(service string) (*rpc.Client, error) {
 	thisservice, ok := c.Service[service]
 	if !ok {
@@ -86,7 +86,7 @@ func (c *JSONRPCClient) DialWithServiceDiscovery(service string) (*rpc.Client, e
 
 	addr, err := Default.MicroserviceClient.ServiceDiscovery(thisservice.MicroserviceName)
 	if err != nil {
-		return nil, fmt.Errorf("[error]jsonrpc ServiceDiscovery error:", err.Error())
+		return nil, fmt.Errorf("[error]jsonrpc ServiceDiscovery error: %s", err.Error())
 	}
 
 	client, err := jsonrpc.Dial(thisservice.Network, addr)

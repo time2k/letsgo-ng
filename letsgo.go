@@ -37,7 +37,7 @@ func (commp *CommonParams) SetParam(name string, value string) bool {
 // GetParam 读出参数
 func (commp *CommonParams) GetParam(name string) string {
 	v, ok := commp.Params[name]
-	if ok != true {
+	if !ok {
 		return ""
 	}
 	return v
@@ -107,7 +107,7 @@ func (L *Letsgo) InitDBQuery(cfg config.DBconfigStruct) {
 			}
 			DBset.Slave.SetMaxOpenConns(v["slave"].DBconnMaxConns)
 			DBset.Slave.SetMaxIdleConns(v["slave"].DBconnMaxIdles)
-			DBset.Master.SetConnMaxLifetime(v["slave"].DBconnMaxLifeTime)
+			DBset.Slave.SetConnMaxLifetime(v["slave"].DBconnMaxLifeTime)
 			err = DBset.Slave.Ping()
 			if err != nil {
 				log.Panicf("[error]Databases: connect error: %s", err.Error())
