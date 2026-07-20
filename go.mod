@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -37,7 +37,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
